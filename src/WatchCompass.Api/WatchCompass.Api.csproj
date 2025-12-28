@@ -3,13 +3,21 @@
   <ItemGroup>
     <ProjectReference Include="..\WatchCompass.Application\WatchCompass.Application.csproj" />
     <ProjectReference Include="..\WatchCompass.Infrastructure\WatchCompass.Infrastructure.csproj" />
+    <ProjectReference Include="..\WatchCompass.Contracts\WatchCompass.Contracts.csproj" />
   </ItemGroup>
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <Version>0.1.0</Version>
+    <Version>0.2.0</Version>
+    <PackageVersion>$(Version)</PackageVersion>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Serilog.AspNetCore" Version="8.0.1" />
+    <PackageReference Include="Serilog.Sinks.Console" Version="5.0.1" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
+  </ItemGroup>
 
 </Project>

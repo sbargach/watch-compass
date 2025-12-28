@@ -1,0 +1,32 @@
+namespace WatchCompass.Contracts;
+
+/// <summary>
+/// A recommended movie tailored to the requested mood and constraints.
+/// </summary>
+public sealed record RecommendationDto
+{
+    /// <summary>
+    /// Provider-specific movie identifier.
+    /// </summary>
+    public int MovieId { get; init; }
+
+    /// <summary>
+    /// Display title of the movie.
+    /// </summary>
+    public required string Title { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Runtime in minutes.
+    /// </summary>
+    public int RuntimeMinutes { get; init; }
+
+    /// <summary>
+    /// Human-readable reasons why the title was chosen.
+    /// </summary>
+    public IReadOnlyList<string> Reasons { get; init; } = Array.Empty<string>();
+
+    /// <summary>
+    /// Streaming or purchase providers where the title is available.
+    /// </summary>
+    public IReadOnlyList<string> Providers { get; init; } = Array.Empty<string>();
+}

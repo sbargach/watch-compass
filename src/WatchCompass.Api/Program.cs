@@ -1,6 +1,6 @@
-var builder = WebApplication.CreateBuilder(args);
-var app = builder.Build();
+using WatchCompass.Api.Application;
 
-app.MapGet("/", () => "Watch Compass API scaffold");
+var app = ApiHostBuilder.BuildApp(args);
+await app.RunAsync();
 
-app.Run();
+public partial class Program;
