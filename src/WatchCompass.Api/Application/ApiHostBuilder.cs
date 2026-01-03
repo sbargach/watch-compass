@@ -1,4 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 using Serilog;
 using Serilog.Events;
 using WatchCompass.Api.Middleware;
@@ -29,9 +32,21 @@ public static class ApiHostBuilder
         });
 
         builder.Services.AddApplication();
-        builder.Services.AddInfrastructure();
+        builder.Services.AddInfrastructure(builder.Configuration);
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
+        builder.Services.AddOpenTelemetry()
+            .ConfigureResource(resource => resource.AddService("watch-compass"))
+            .WithTracing(tracing => tracing
+                .AddAspNetCoreInstrumentation()
+                .AddHttpClientInstrumentation()
+                .AddConsoleExporter())
+            .WithMetrics(metrics => metrics
+                .AddAspNetCoreInstrumentation()
+                .AddHttpClientInstrumentation()
+                .AddRuntimeInstrumentation()
+                .AddMeter("watch-compass.tmdb")
+                .AddPrometheusExporter());
         builder.Services.ConfigureHttpJsonOptions(options =>
         {
             options.SerializerOptions.PropertyNamingPolicy = JsonResponse.DefaultOptions.PropertyNamingPolicy;
@@ -50,6 +65,7 @@ public static class ApiHostBuilder
             app.UseSwaggerUI();
         }
 
+        app.MapPrometheusScrapingEndpoint();
         MapEndpoints(app);
 
         return app;

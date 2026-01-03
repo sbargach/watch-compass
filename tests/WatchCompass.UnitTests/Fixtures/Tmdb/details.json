@@ -1,0 +1,9 @@
+{
+  "id": 100,
+  "title": "Example Search Movie",
+  "runtime": 130,
+  "genres": [
+    { "id": 12, "name": "Adventure" },
+    { "id": 80, "name": "Crime" }
+  ]
+}

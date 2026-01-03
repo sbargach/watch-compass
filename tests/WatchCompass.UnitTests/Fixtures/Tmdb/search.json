@@ -1,0 +1,16 @@
+{
+  "page": 1,
+  "results": [
+    {
+      "id": 100,
+      "title": "Example Search Movie",
+      "runtime": 125,
+      "genre_ids": [28, 12]
+    },
+    {
+      "id": 101,
+      "title": "Second Match",
+      "genre_ids": [35]
+    }
+  ]
+}

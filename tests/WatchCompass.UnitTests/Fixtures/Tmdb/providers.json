@@ -1,0 +1,23 @@
+{
+  "id": 100,
+  "results": {
+    "US": {
+      "flatrate": [
+        { "provider_name": "Netflix" },
+        { "provider_name": "Hulu" }
+      ],
+      "rent": [
+        { "provider_name": "Apple TV" }
+      ],
+      "buy": [
+        { "provider_name": "Vudu" },
+        { "provider_name": "Netflix" }
+      ]
+    },
+    "CA": {
+      "flatrate": [
+        { "provider_name": "Crave" }
+      ]
+    }
+  }
+}
