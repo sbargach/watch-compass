@@ -19,9 +19,10 @@ public sealed class NoOpMovieCatalog : IMovieCatalog
         return Task.FromResult<MovieDetails?>(null);
     }
 
-    public Task<IReadOnlyList<string>> GetWatchProvidersAsync(int movieId, CancellationToken cancellationToken = default)
+    public Task<IReadOnlyList<string>> GetWatchProvidersAsync(int movieId, string countryCode, CancellationToken cancellationToken = default)
     {
         _ = movieId;
+        _ = countryCode;
         cancellationToken.ThrowIfCancellationRequested();
         return Task.FromResult<IReadOnlyList<string>>(Array.Empty<string>());
     }

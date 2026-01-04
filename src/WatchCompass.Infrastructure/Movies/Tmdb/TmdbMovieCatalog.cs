@@ -96,7 +96,7 @@ public sealed class TmdbMovieCatalog : IMovieCatalog
         }
     }
 
-    public async Task<IReadOnlyList<string>> GetWatchProvidersAsync(int movieId, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<string>> GetWatchProvidersAsync(int movieId, string countryCode, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
         if (!HasApiKey())
@@ -114,9 +114,13 @@ public sealed class TmdbMovieCatalog : IMovieCatalog
                 return Array.Empty<string>();
             }
 
-            var country = response.Results.TryGetValue("US", out var usResult)
-                ? usResult
-                : response.Results.Values.FirstOrDefault();
+            var normalizedCountry = string.IsNullOrWhiteSpace(countryCode)
+                ? "US"
+                : countryCode.Trim().ToUpperInvariant();
+
+            var country = response.Results.TryGetValue(normalizedCountry, out var selectedResult)
+                ? selectedResult
+                : response.Results.OrderBy(entry => entry.Key, StringComparer.Ordinal).FirstOrDefault().Value;
 
             if (country is null)
             {

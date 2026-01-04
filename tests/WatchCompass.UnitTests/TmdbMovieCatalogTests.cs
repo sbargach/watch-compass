@@ -54,7 +54,7 @@ public class TmdbMovieCatalogTests
     {
         var catalog = CreateCatalog("/3/movie/100/watch/providers", "providers.json", out var handler, out var logger);
 
-        var providers = await catalog.GetWatchProvidersAsync(100);
+        var providers = await catalog.GetWatchProvidersAsync(100, "US");
 
         handler.CallCount.ShouldBe(1, $"Exceptions: {FormatExceptions(logger.Exceptions)}");
         logger.Exceptions.ShouldBeEmpty();

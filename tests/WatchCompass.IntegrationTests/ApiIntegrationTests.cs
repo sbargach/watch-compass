@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -49,5 +50,71 @@ public class ApiIntegrationTests
         response.StatusCode.ShouldBe(HttpStatusCode.OK);
         var body = await response.Content.ReadAsStringAsync();
         body.Length.ShouldBeGreaterThan(0);
+    }
+
+    [Test]
+    public async Task RecommendationsEndpoint_ReturnsItemsArray()
+    {
+        var client = _factory.CreateClient();
+        var payload = new
+        {
+            mood = "Chill",
+            timeBudgetMinutes = 120,
+            query = "matrix",
+            avoidGenres = new[] { "Horror" },
+            countryCode = "US"
+        };
+
+        var response = await client.PostAsJsonAsync("/api/recommendations", payload);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
+        var content = await response.Content.ReadAsStringAsync();
+        using var document = JsonDocument.Parse(content);
+        document.RootElement.TryGetProperty("items", out var items).ShouldBeTrue();
+        items.ValueKind.ShouldBe(JsonValueKind.Array);
+    }
+
+    [Test]
+    public async Task RecommendationsEndpoint_WithInvalidBudget_ReturnsProblemDetails()
+    {
+        var client = _factory.CreateClient();
+        var payload = new
+        {
+            mood = "Chill",
+            timeBudgetMinutes = 0,
+            countryCode = "US"
+        };
+
+        var response = await client.PostAsJsonAsync("/api/recommendations", payload);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+        var content = await response.Content.ReadAsStringAsync();
+        using var document = JsonDocument.Parse(content);
+        document.RootElement.TryGetProperty("title", out var title).ShouldBeTrue();
+        var titleText = title.GetString();
+        titleText.ShouldNotBeNull();
+        titleText!.ToLowerInvariant().ShouldContain("time budget");
+    }
+
+    [Test]
+    public async Task RecommendationsEndpoint_WithInvalidMood_ReturnsProblemDetails()
+    {
+        var client = _factory.CreateClient();
+        var payload = new
+        {
+            mood = "Sleepy",
+            timeBudgetMinutes = 120,
+            countryCode = "US"
+        };
+
+        var response = await client.PostAsJsonAsync("/api/recommendations", payload);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+        var content = await response.Content.ReadAsStringAsync();
+        using var document = JsonDocument.Parse(content);
+        document.RootElement.TryGetProperty("title", out var title).ShouldBeTrue();
+        var titleText = title.GetString();
+        titleText.ShouldNotBeNull();
+        titleText!.ToLowerInvariant().ShouldContain("invalid mood");
     }
 }
