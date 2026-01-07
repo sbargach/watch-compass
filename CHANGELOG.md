@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-01-07
+### Changed
+- Reworked TMDB integration to use a typed HttpClient + request executor with configurable retries, timeouts, and backoff.
+- Unified TMDB configuration validation (ApiKey now throws a dedicated configuration exception).
+- Added WireMock-backed integration tests covering TMDB mapping and API provider population without live HTTP.
+
 ## [0.4.0] - 2025-01-04
 - Added: recommendation engine v1 with explainable reasons
 - Added: request validation and consistent 400 ProblemDetails

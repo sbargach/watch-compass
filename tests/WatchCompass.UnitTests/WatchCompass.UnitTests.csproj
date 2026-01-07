@@ -18,10 +18,4 @@
     <ProjectReference Include="..\\..\\src\\WatchCompass.Infrastructure\\WatchCompass.Infrastructure.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <None Update="Fixtures\\Tmdb\\*.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
-
 </Project>

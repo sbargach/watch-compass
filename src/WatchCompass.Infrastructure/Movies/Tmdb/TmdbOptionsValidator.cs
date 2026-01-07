@@ -16,6 +16,36 @@ public sealed class TmdbOptionsValidator : IValidateOptions<TmdbOptions>
             return ValidateOptionsResult.Fail("Tmdb:BaseUrl must be an absolute URI.");
         }
 
+        if (string.IsNullOrWhiteSpace(options.DefaultCountryCode) || options.DefaultCountryCode.Trim().Length != 2)
+        {
+            return ValidateOptionsResult.Fail("Tmdb:DefaultCountryCode must be a two-letter country code.");
+        }
+
+        if (string.IsNullOrWhiteSpace(options.Language))
+        {
+            return ValidateOptionsResult.Fail("Tmdb:Language is required.");
+        }
+
+        if (options.RequestTimeoutSeconds <= 0)
+        {
+            return ValidateOptionsResult.Fail("Tmdb:RequestTimeoutSeconds must be greater than zero.");
+        }
+
+        if (options.MaxRetries < 0)
+        {
+            return ValidateOptionsResult.Fail("Tmdb:MaxRetries must be zero or greater.");
+        }
+
+        if (options.BackoffBaseMilliseconds <= 0)
+        {
+            return ValidateOptionsResult.Fail("Tmdb:BackoffBaseMilliseconds must be greater than zero.");
+        }
+
+        if (options.BackoffJitterMilliseconds < 0)
+        {
+            return ValidateOptionsResult.Fail("Tmdb:BackoffJitterMilliseconds must be zero or greater.");
+        }
+
         return ValidateOptionsResult.Success;
     }
 }

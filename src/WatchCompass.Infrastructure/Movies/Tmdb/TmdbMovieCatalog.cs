@@ -8,19 +8,21 @@ namespace WatchCompass.Infrastructure.Movies.Tmdb;
 
 public sealed class TmdbMovieCatalog : IMovieCatalog
 {
+    private const string DefaultCountryFallback = "US";
+
     private static readonly Meter Meter = new("watch-compass.tmdb");
     private static readonly Counter<long> CallsCounter = Meter.CreateCounter<long>("tmdb.calls.count");
     private static readonly KeyValuePair<string, object?> SearchTag = new("operation", "search");
     private static readonly KeyValuePair<string, object?> DetailsTag = new("operation", "details");
     private static readonly KeyValuePair<string, object?> ProvidersTag = new("operation", "providers");
 
-    private readonly ITmdbApi _api;
+    private readonly ITmdbApiClient _apiClient;
     private readonly ILogger<TmdbMovieCatalog> _logger;
     private readonly TmdbOptions _options;
 
-    public TmdbMovieCatalog(ITmdbApi api, IOptions<TmdbOptions> options, ILogger<TmdbMovieCatalog> logger)
+    public TmdbMovieCatalog(ITmdbApiClient apiClient, IOptions<TmdbOptions> options, ILogger<TmdbMovieCatalog> logger)
     {
-        _api = api;
+        _apiClient = apiClient;
         _logger = logger;
         _options = options.Value;
     }
@@ -28,51 +30,46 @@ public sealed class TmdbMovieCatalog : IMovieCatalog
     public async Task<IReadOnlyList<MovieCard>> SearchAsync(string query, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        if (!HasApiKey())
+        if (string.IsNullOrWhiteSpace(query))
         {
-            _logger.LogWarning("TMDB API key missing; search returning no results.");
             return Array.Empty<MovieCard>();
         }
 
+        EnsureApiKey();
+
+        var trimmedQuery = query.Trim();
+        CallsCounter.Add(1, SearchTag);
         try
         {
-            CallsCounter.Add(1, SearchTag);
-            var response = await _api.SearchMoviesAsync(query, cancellationToken);
-            if (response.Results.Count == 0)
-            {
-                return Array.Empty<MovieCard>();
-            }
+            var response = await _apiClient.SearchMoviesAsync(trimmedQuery, cancellationToken);
 
             return response.Results
                 .Where(result => result.Id > 0 && !string.IsNullOrWhiteSpace(result.Title))
-                .Select(result => new MovieCard(result.Id, result.Title, result.Runtime, Array.Empty<string>()))
+                .Select(result => new MovieCard(result.Id, result.Title.Trim(), NormalizeRuntime(result.Runtime), Array.Empty<string>()))
                 .ToList();
         }
-        catch (OperationCanceledException)
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
+            _logger.LogWarning(ex, "TMDB search failed for query {Query}", trimmedQuery);
             throw;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "TMDB search failed for query {Query}", query);
-            return Array.Empty<MovieCard>();
         }
     }
 
     public async Task<MovieDetails?> GetDetailsAsync(int movieId, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        if (!HasApiKey())
+        if (movieId <= 0)
         {
-            _logger.LogWarning("TMDB API key missing; movie details unavailable for {MovieId}.", movieId);
             return null;
         }
 
+        EnsureApiKey();
+
+        CallsCounter.Add(1, DetailsTag);
         try
         {
-            CallsCounter.Add(1, DetailsTag);
-            var response = await _api.GetMovieDetailsAsync(movieId, cancellationToken);
-            if (response.Id == 0 || string.IsNullOrWhiteSpace(response.Title))
+            var response = await _apiClient.GetMovieDetailsAsync(movieId, cancellationToken);
+            if (response.Id <= 0 || string.IsNullOrWhiteSpace(response.Title))
             {
                 return null;
             }
@@ -80,76 +77,88 @@ public sealed class TmdbMovieCatalog : IMovieCatalog
             var genres = response.Genres
                 .Select(genre => genre.Name)
                 .Where(name => !string.IsNullOrWhiteSpace(name))
+                .Select(name => name.Trim())
                 .ToArray();
 
-            var runtime = response.Runtime ?? 0;
-            return new MovieDetails(response.Id, response.Title, runtime, genres);
+            var runtime = NormalizeRuntime(response.Runtime) ?? 0;
+            return new MovieDetails(response.Id, response.Title.Trim(), runtime, genres);
         }
-        catch (OperationCanceledException)
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
+            _logger.LogWarning(ex, "TMDB movie details failed for {MovieId}", movieId);
             throw;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "TMDB details fetch failed for {MovieId}", movieId);
-            return null;
         }
     }
 
     public async Task<IReadOnlyList<string>> GetWatchProvidersAsync(int movieId, string countryCode, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        if (!HasApiKey())
+        if (movieId <= 0)
         {
-            _logger.LogWarning("TMDB API key missing; providers unavailable for {MovieId}.", movieId);
             return Array.Empty<string>();
         }
 
+        EnsureApiKey();
+
+        var normalizedCountry = NormalizeCountry(countryCode);
+        CallsCounter.Add(1, ProvidersTag);
         try
         {
-            CallsCounter.Add(1, ProvidersTag);
-            var response = await _api.GetWatchProvidersAsync(movieId, cancellationToken);
+            var response = await _apiClient.GetWatchProvidersAsync(movieId, normalizedCountry, cancellationToken);
             if (response.Results.Count == 0)
             {
                 return Array.Empty<string>();
             }
 
-            var normalizedCountry = string.IsNullOrWhiteSpace(countryCode)
-                ? "US"
-                : countryCode.Trim().ToUpperInvariant();
-
-            var country = response.Results.TryGetValue(normalizedCountry, out var selectedResult)
-                ? selectedResult
-                : response.Results.OrderBy(entry => entry.Key, StringComparer.Ordinal).FirstOrDefault().Value;
+            var country = response.Results.TryGetValue(normalizedCountry, out var selected)
+                ? selected
+                : response.Results.OrderBy(entry => entry.Key, StringComparer.OrdinalIgnoreCase).FirstOrDefault().Value;
 
             if (country is null)
             {
                 return Array.Empty<string>();
             }
 
-            var providers = country.FlatRate
+            return country.FlatRate
                 .Concat(country.Rent)
                 .Concat(country.Buy)
                 .Select(provider => provider.ProviderName)
                 .Where(name => !string.IsNullOrWhiteSpace(name))
+                .Select(name => name.Trim())
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToList();
-
-            return providers;
         }
-        catch (OperationCanceledException)
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
+            _logger.LogWarning(ex, "TMDB watch providers failed for {MovieId}", movieId);
             throw;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "TMDB providers fetch failed for {MovieId}", movieId);
-            return Array.Empty<string>();
         }
     }
 
-    private bool HasApiKey()
+    private void EnsureApiKey()
     {
-        return !string.IsNullOrWhiteSpace(_options.ApiKey);
+        if (string.IsNullOrWhiteSpace(_options.ApiKey))
+        {
+            throw new TmdbConfigurationException("Tmdb:ApiKey is required to call TMDB.");
+        }
+    }
+
+    private static int? NormalizeRuntime(int? runtime)
+    {
+        return runtime.HasValue && runtime.Value > 0 ? runtime : null;
+    }
+
+    private string NormalizeCountry(string countryCode)
+    {
+        var code = string.IsNullOrWhiteSpace(countryCode)
+            ? _options.DefaultCountryCode
+            : countryCode;
+
+        if (string.IsNullOrWhiteSpace(code))
+        {
+            return DefaultCountryFallback;
+        }
+
+        return code.Trim().ToUpperInvariant();
     }
 }
