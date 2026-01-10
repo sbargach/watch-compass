@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
+using WatchCompass.Application.Dtos;
+using WatchCompass.Application.UseCases.MovieDetails;
 using WatchCompass.Application.UseCases.SearchMovies;
 using WatchCompass.Contracts;
 
@@ -8,11 +10,13 @@ namespace WatchCompass.Api.Api.Controllers;
 [Route("api/movies")]
 public sealed class SearchController : ControllerBase
 {
-    private readonly SearchMoviesUseCase _useCase;
+    private readonly SearchMoviesUseCase _searchMoviesUseCase;
+    private readonly GetMovieDetailsUseCase _getMovieDetailsUseCase;
 
-    public SearchController(SearchMoviesUseCase useCase)
+    public SearchController(SearchMoviesUseCase searchMoviesUseCase, GetMovieDetailsUseCase getMovieDetailsUseCase)
     {
-        _useCase = useCase;
+        _searchMoviesUseCase = searchMoviesUseCase;
+        _getMovieDetailsUseCase = getMovieDetailsUseCase;
     }
 
     [HttpGet("search")]
@@ -27,7 +31,7 @@ public sealed class SearchController : ControllerBase
             });
         }
 
-        var results = await _useCase.SearchAsync(query, cancellationToken);
+        var results = await _searchMoviesUseCase.SearchAsync(query, cancellationToken);
         var response = new SearchMoviesResponse
         {
             Items = results
@@ -44,7 +48,44 @@ public sealed class SearchController : ControllerBase
         return Ok(response);
     }
 
-    private ActionResult<SearchMoviesResponse> ToProblem(ProblemDetails details)
+    [HttpGet("{movieId:int}")]
+    public async Task<ActionResult<MovieDetailsDto>> GetById([FromRoute] int movieId, [FromQuery] string? countryCode, CancellationToken cancellationToken)
+    {
+        if (movieId <= 0)
+        {
+            return ToProblem(new ProblemDetails
+            {
+                Status = StatusCodes.Status400BadRequest,
+                Title = "Movie id must be positive."
+            });
+        }
+
+        MovieDetailsDto BuildResponse(MovieDetailsWithProviders detailsWithProviders)
+        {
+            return new MovieDetailsDto
+            {
+                MovieId = detailsWithProviders.MovieId,
+                Title = detailsWithProviders.Title,
+                RuntimeMinutes = detailsWithProviders.RuntimeMinutes > 0 ? detailsWithProviders.RuntimeMinutes : null,
+                Genres = detailsWithProviders.Genres,
+                Providers = detailsWithProviders.Providers
+            };
+        }
+
+        var details = await _getMovieDetailsUseCase.GetAsync(movieId, countryCode, cancellationToken);
+        if (details is null)
+        {
+            return ToProblem(new ProblemDetails
+            {
+                Status = StatusCodes.Status404NotFound,
+                Title = "Movie not found."
+            });
+        }
+
+        return Ok(BuildResponse(details));
+    }
+
+    private static ObjectResult ToProblem(ProblemDetails details)
     {
         return new ObjectResult(details)
         {

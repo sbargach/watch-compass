@@ -16,3 +16,10 @@
 - Application: use-cases and abstractions (`IMovieCatalog`) without infrastructure concerns.
 - Infrastructure: TMDB-backed `IMovieCatalog` using `HttpClientFactory`, options, retries, and provider mapping.
 - API: ASP.NET Core entrypoint, DI wiring, controllers, middleware, and telemetry.
+- Caching: in-memory decorator on TMDB catalog (configurable via `Caching:MovieCatalog`).
+
+## API surface
+- `GET /api/movies/search?query=...` – find movies by query.
+- `GET /api/movies/{movieId}?countryCode=XX` – fetch details and available providers for a movie.
+- `POST /api/recommendations` – generate recommendations based on mood, time budget, and optional query/avoids.
+- Swagger UI available at `/swagger` (XML comments enabled).

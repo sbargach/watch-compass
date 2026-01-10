@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using System.Linq;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
@@ -75,6 +76,25 @@ public class ApiIntegrationTests
         response.StatusCode.ShouldBe(HttpStatusCode.OK);
         var body = await response.Content.ReadAsStringAsync();
         body.Length.ShouldBeGreaterThan(0);
+    }
+
+    [Test]
+    public async Task MovieDetailsEndpoint_ReturnsDetailsAndProviders()
+    {
+        StubDetails(100, LoadFixture("details.json"));
+        StubWatchProviders(100, LoadFixture("providers.json"));
+
+        var response = await _client.GetAsync("/api/movies/100?countryCode=US");
+
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var runtime = document.RootElement.GetProperty("runtimeMinutes").GetInt32();
+        runtime.ShouldBe(130);
+        var genres = document.RootElement.GetProperty("genres");
+        genres.GetArrayLength().ShouldBeGreaterThan(0);
+        var providers = document.RootElement.GetProperty("providers");
+        providers.GetArrayLength().ShouldBeGreaterThan(0);
+        providers.EnumerateArray().Select(e => e.GetString()).ShouldContain("Netflix");
     }
 
     [Test]
@@ -189,6 +209,18 @@ public class ApiIntegrationTests
                 .UsingGet()
                 .WithPath($"/3/movie/{movieId}/watch/providers")
                 .WithParam("watch_region", "US")
+                .WithParam("language", "en-US"))
+            .RespondWith(Response.Create()
+                .WithStatusCode((int)HttpStatusCode.OK)
+                .WithHeader("Content-Type", "application/json")
+                .WithBody(body));
+    }
+
+    private void StubDetails(int movieId, string body)
+    {
+        _server.Given(Request.Create()
+                .UsingGet()
+                .WithPath($"/3/movie/{movieId}")
                 .WithParam("language", "en-US"))
             .RespondWith(Response.Create()
                 .WithStatusCode((int)HttpStatusCode.OK)

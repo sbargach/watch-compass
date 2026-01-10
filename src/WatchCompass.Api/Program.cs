@@ -29,7 +29,22 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.DefaultIgnoreCondition = JsonResponse.DefaultOptions.DefaultIgnoreCondition;
     });
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    var basePath = AppContext.BaseDirectory;
+    var apiXml = Path.Combine(basePath, "WatchCompass.Api.xml");
+    var contractsXml = Path.Combine(basePath, "WatchCompass.Contracts.xml");
+
+    if (File.Exists(apiXml))
+    {
+        options.IncludeXmlComments(apiXml, includeControllerXmlComments: true);
+    }
+
+    if (File.Exists(contractsXml))
+    {
+        options.IncludeXmlComments(contractsXml);
+    }
+});
 builder.Services.AddOpenTelemetry()
     .ConfigureResource(resource => resource.AddService("watch-compass"))
     .WithTracing(tracing => tracing
