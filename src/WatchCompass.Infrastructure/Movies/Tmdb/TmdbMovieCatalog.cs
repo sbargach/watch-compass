@@ -9,6 +9,9 @@ namespace WatchCompass.Infrastructure.Movies.Tmdb;
 public sealed class TmdbMovieCatalog : IMovieCatalog
 {
     private const string DefaultCountryFallback = "US";
+    private const string ImageBaseUrl = "https://image.tmdb.org/t/p";
+    private const string PosterSize = "w500";
+    private const string BackdropSize = "w780";
 
     private static readonly Meter Meter = new("watch-compass.tmdb");
     private static readonly Counter<long> CallsCounter = Meter.CreateCounter<long>("tmdb.calls.count");
@@ -45,7 +48,7 @@ public sealed class TmdbMovieCatalog : IMovieCatalog
 
             return response.Results
                 .Where(result => result.Id > 0 && !string.IsNullOrWhiteSpace(result.Title))
-                .Select(result => new MovieCard(result.Id, result.Title.Trim(), NormalizeRuntime(result.Runtime), Array.Empty<string>()))
+                .Select(MapSearchResult)
                 .ToList();
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
@@ -81,7 +84,15 @@ public sealed class TmdbMovieCatalog : IMovieCatalog
                 .ToArray();
 
             var runtime = NormalizeRuntime(response.Runtime) ?? 0;
-            return new MovieDetails(response.Id, response.Title.Trim(), runtime, genres);
+            return new MovieDetails(
+                response.Id,
+                response.Title.Trim(),
+                runtime,
+                genres,
+                BuildImageUrl(response.PosterPath, PosterSize),
+                BuildImageUrl(response.BackdropPath, BackdropSize),
+                ParseYear(response.ReleaseDate),
+                NormalizeOverview(response.Overview));
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
@@ -143,6 +154,19 @@ public sealed class TmdbMovieCatalog : IMovieCatalog
         }
     }
 
+    private MovieCard MapSearchResult(TmdbMovieSearchResult result)
+    {
+        return new MovieCard(
+            result.Id,
+            result.Title.Trim(),
+            NormalizeRuntime(result.Runtime),
+            Array.Empty<string>(),
+            BuildImageUrl(result.PosterPath, PosterSize),
+            BuildImageUrl(result.BackdropPath, BackdropSize),
+            ParseYear(result.ReleaseDate),
+            NormalizeOverview(result.Overview));
+    }
+
     private static int? NormalizeRuntime(int? runtime)
     {
         return runtime.HasValue && runtime.Value > 0 ? runtime : null;
@@ -160,5 +184,37 @@ public sealed class TmdbMovieCatalog : IMovieCatalog
         }
 
         return code.Trim().ToUpperInvariant();
+    }
+
+    private static string? BuildImageUrl(string? path, string size)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return null;
+        }
+
+        var trimmedPath = path.TrimStart('/');
+        return $"{ImageBaseUrl}/{size}/{trimmedPath}";
+    }
+
+    private static int? ParseYear(string? releaseDate)
+    {
+        if (string.IsNullOrWhiteSpace(releaseDate) || releaseDate.Length < 4)
+        {
+            return null;
+        }
+
+        return int.TryParse(releaseDate.AsSpan(0, 4), out var year) ? year : null;
+    }
+
+    private static string? NormalizeOverview(string? overview)
+    {
+        if (string.IsNullOrWhiteSpace(overview))
+        {
+            return null;
+        }
+
+        var trimmed = overview.Trim();
+        return trimmed.Length == 0 ? null : trimmed;
     }
 }

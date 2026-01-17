@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2026-01-17
+### Added
+- TMDB mapping now surfaces poster/backdrop URLs, release year, and overview across search, details, and recommendations.
+- API contracts expose the richer metadata for UI cards while keeping provider lists intact.
+
 ## [0.6.0] - 2026-01-10
 ### Added
 - In-memory caching decorator for TMDB catalog (configurable durations).

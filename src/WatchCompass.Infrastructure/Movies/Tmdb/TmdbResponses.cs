@@ -16,11 +16,23 @@ public sealed class TmdbMovieSearchResult
     [JsonPropertyName("title")]
     public string Title { get; init; } = string.Empty;
 
+    [JsonPropertyName("poster_path")]
+    public string? PosterPath { get; init; }
+
+    [JsonPropertyName("backdrop_path")]
+    public string? BackdropPath { get; init; }
+
+    [JsonPropertyName("release_date")]
+    public string? ReleaseDate { get; init; }
+
     [JsonPropertyName("genre_ids")]
     public List<int> GenreIds { get; init; } = [];
 
     [JsonPropertyName("runtime")]
     public int? Runtime { get; init; }
+
+    [JsonPropertyName("overview")]
+    public string? Overview { get; init; }
 }
 
 public sealed class TmdbMovieDetailsResponse
@@ -31,11 +43,23 @@ public sealed class TmdbMovieDetailsResponse
     [JsonPropertyName("title")]
     public string Title { get; init; } = string.Empty;
 
+    [JsonPropertyName("poster_path")]
+    public string? PosterPath { get; init; }
+
+    [JsonPropertyName("backdrop_path")]
+    public string? BackdropPath { get; init; }
+
+    [JsonPropertyName("release_date")]
+    public string? ReleaseDate { get; init; }
+
     [JsonPropertyName("runtime")]
     public int? Runtime { get; init; }
 
     [JsonPropertyName("genres")]
     public List<TmdbGenre> Genres { get; init; } = [];
+
+    [JsonPropertyName("overview")]
+    public string? Overview { get; init; }
 }
 
 public sealed class TmdbGenre

@@ -2,6 +2,10 @@
   "id": 100,
   "title": "Example Search Movie",
   "runtime": 130,
+  "poster_path": "/poster-100-details.jpg",
+  "backdrop_path": "/backdrop-100-details.jpg",
+  "release_date": "2021-12-25",
+  "overview": "Full movie overview from details endpoint.",
   "genres": [
     { "id": 12, "name": "Adventure" },
     { "id": 80, "name": "Crime" }

@@ -5,12 +5,20 @@
       "id": 100,
       "title": "Example Search Movie",
       "runtime": 125,
-      "genre_ids": [28, 12]
+      "genre_ids": [28, 12],
+      "poster_path": "/poster-100.jpg",
+      "backdrop_path": "/backdrop-100.jpg",
+      "release_date": "2020-07-04",
+      "overview": "A sample overview for the search result."
     },
     {
       "id": 101,
       "title": "Second Match",
-      "genre_ids": [35]
+      "genre_ids": [35],
+      "poster_path": null,
+      "backdrop_path": "/backdrop-101.jpg",
+      "release_date": "",
+      "overview": " "
     }
   ]
 }

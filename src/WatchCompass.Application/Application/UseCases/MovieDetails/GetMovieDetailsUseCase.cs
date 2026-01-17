@@ -28,6 +28,15 @@ public sealed class GetMovieDetailsUseCase
         }
 
         var providers = await _movieCatalog.GetWatchProvidersAsync(movieId, countryCode ?? string.Empty, cancellationToken);
-        return new MovieDetailsWithProviders(details.MovieId, details.Title, details.RuntimeMinutes, details.Genres, providers);
+        return new MovieDetailsWithProviders(
+            details.MovieId,
+            details.Title,
+            details.RuntimeMinutes,
+            details.Genres,
+            providers,
+            details.PosterUrl,
+            details.BackdropUrl,
+            details.ReleaseYear,
+            details.Overview);
     }
 }

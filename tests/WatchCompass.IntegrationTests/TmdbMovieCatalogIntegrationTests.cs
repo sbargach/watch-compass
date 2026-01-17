@@ -51,7 +51,13 @@ public class TmdbMovieCatalogIntegrationTests
         results[0].MovieId.ShouldBe(100);
         results[0].Title.ShouldBe("Example Search Movie");
         results[0].RuntimeMinutes.ShouldBe(125);
+        results[0].PosterUrl.ShouldBe("https://image.tmdb.org/t/p/w500/poster-100.jpg");
+        results[0].BackdropUrl.ShouldBe("https://image.tmdb.org/t/p/w780/backdrop-100.jpg");
+        results[0].ReleaseYear.ShouldBe(2020);
+        results[0].Overview.ShouldNotBeNullOrWhiteSpace();
         results[1].RuntimeMinutes.ShouldBeNull();
+        results[1].ReleaseYear.ShouldBeNull();
+        results[1].Overview.ShouldBeNull();
     }
 
     [Test]
@@ -67,6 +73,10 @@ public class TmdbMovieCatalogIntegrationTests
         details.ShouldNotBeNull();
         details!.RuntimeMinutes.ShouldBe(130);
         details.Genres.ShouldBe(new[] { "Adventure", "Crime" });
+        details.PosterUrl.ShouldBe("https://image.tmdb.org/t/p/w500/poster-100-details.jpg");
+        details.BackdropUrl.ShouldBe("https://image.tmdb.org/t/p/w780/backdrop-100-details.jpg");
+        details.ReleaseYear.ShouldBe(2021);
+        details.Overview.ShouldBe("Full movie overview from details endpoint.");
     }
 
     [Test]

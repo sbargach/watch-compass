@@ -89,7 +89,11 @@ public sealed class RecommendationsController : ControllerBase
                     Reasons = rec.Reasons,
                     Providers = providersByMovie.TryGetValue(rec.MovieId, out var providers)
                         ? providers
-                        : rec.Providers
+                        : rec.Providers,
+                    PosterUrl = rec.PosterUrl,
+                    BackdropUrl = rec.BackdropUrl,
+                    ReleaseYear = rec.ReleaseYear,
+                    Overview = rec.Overview
                 })
                 .ToList()
         };

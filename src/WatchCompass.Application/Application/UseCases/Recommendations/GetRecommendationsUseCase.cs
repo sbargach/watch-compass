@@ -54,6 +54,10 @@ public sealed class GetRecommendationsUseCase
             var runtime = movie.RuntimeMinutes;
             var genres = movie.Genres ?? Array.Empty<string>();
             var title = movie.Title;
+            var posterUrl = movie.PosterUrl;
+            var backdropUrl = movie.BackdropUrl;
+            var releaseYear = movie.ReleaseYear;
+            var overview = movie.Overview;
             var runtimeMissing = !runtime.HasValue || runtime.Value <= 0;
 
             if (runtimeMissing)
@@ -64,6 +68,10 @@ public sealed class GetRecommendationsUseCase
                     runtime = details.RuntimeMinutes;
                     genres = details.Genres;
                     title = details.Title;
+                    posterUrl ??= details.PosterUrl;
+                    backdropUrl ??= details.BackdropUrl;
+                    releaseYear ??= details.ReleaseYear;
+                    overview ??= details.Overview;
                 }
             }
 
@@ -87,7 +95,16 @@ public sealed class GetRecommendationsUseCase
             var runtimeValue = runtimeKnown ? runtimeMinutes : timeBudget.Minutes;
             var reasons = BuildReasons(mood, timeBudget.Minutes, runtimeKnown, runtimeValue, normalizedGenres, effectiveQuery);
 
-            recommendations.Add(new Recommendation(movie.MovieId, title, runtimeValue, reasons, Array.Empty<string>()));
+            recommendations.Add(new Recommendation(
+                movie.MovieId,
+                title,
+                runtimeValue,
+                reasons,
+                Array.Empty<string>(),
+                posterUrl,
+                backdropUrl,
+                releaseYear,
+                overview));
             if (recommendations.Count == 3)
             {
                 break;

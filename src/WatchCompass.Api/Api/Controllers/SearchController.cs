@@ -40,7 +40,11 @@ public sealed class SearchController : ControllerBase
                     MovieId = movie.MovieId,
                     Title = movie.Title,
                     RuntimeMinutes = movie.RuntimeMinutes,
-                    Genres = movie.Genres
+                    Genres = movie.Genres,
+                    PosterUrl = movie.PosterUrl,
+                    BackdropUrl = movie.BackdropUrl,
+                    ReleaseYear = movie.ReleaseYear,
+                    Overview = movie.Overview
                 })
                 .ToList()
         };
@@ -68,7 +72,11 @@ public sealed class SearchController : ControllerBase
                 Title = detailsWithProviders.Title,
                 RuntimeMinutes = detailsWithProviders.RuntimeMinutes > 0 ? detailsWithProviders.RuntimeMinutes : null,
                 Genres = detailsWithProviders.Genres,
-                Providers = detailsWithProviders.Providers
+                Providers = detailsWithProviders.Providers,
+                PosterUrl = detailsWithProviders.PosterUrl,
+                BackdropUrl = detailsWithProviders.BackdropUrl,
+                ReleaseYear = detailsWithProviders.ReleaseYear,
+                Overview = detailsWithProviders.Overview
             };
         }
 

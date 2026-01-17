@@ -66,6 +66,10 @@ public class ApiIntegrationTests
         items.ValueKind.ShouldBe(JsonValueKind.Array);
         items.GetArrayLength().ShouldBe(2);
         items[0].GetProperty("movieId").GetInt32().ShouldBe(100);
+        items[0].GetProperty("posterUrl").GetString().ShouldBe("https://image.tmdb.org/t/p/w500/poster-100.jpg");
+        items[0].GetProperty("backdropUrl").GetString().ShouldBe("https://image.tmdb.org/t/p/w780/backdrop-100.jpg");
+        items[0].GetProperty("releaseYear").GetInt32().ShouldBe(2020);
+        items[0].GetProperty("overview").GetString().ShouldNotBeNull();
     }
 
     [Test]
@@ -95,6 +99,10 @@ public class ApiIntegrationTests
         var providers = document.RootElement.GetProperty("providers");
         providers.GetArrayLength().ShouldBeGreaterThan(0);
         providers.EnumerateArray().Select(e => e.GetString()).ShouldContain("Netflix");
+        document.RootElement.GetProperty("posterUrl").GetString().ShouldBe("https://image.tmdb.org/t/p/w500/poster-100-details.jpg");
+        document.RootElement.GetProperty("backdropUrl").GetString().ShouldBe("https://image.tmdb.org/t/p/w780/backdrop-100-details.jpg");
+        document.RootElement.GetProperty("releaseYear").GetInt32().ShouldBe(2021);
+        document.RootElement.GetProperty("overview").GetString().ShouldBe("Full movie overview from details endpoint.");
     }
 
     [Test]
@@ -107,7 +115,11 @@ public class ApiIntegrationTests
               "id": 999,
               "title": "Mocked Match",
               "runtime": 100,
-              "genre_ids": [18]
+              "genre_ids": [18],
+              "poster_path": "/poster-999.jpg",
+              "backdrop_path": "/backdrop-999.jpg",
+              "release_date": "2019-11-11",
+              "overview": "Recommendation overview."
             }
           ]
         }
@@ -148,6 +160,10 @@ public class ApiIntegrationTests
         var providers = items[0].GetProperty("providers");
         providers.GetArrayLength().ShouldBeGreaterThan(0);
         providers[0].GetString().ShouldBe("Netflix");
+        items[0].GetProperty("posterUrl").GetString().ShouldBe("https://image.tmdb.org/t/p/w500/poster-999.jpg");
+        items[0].GetProperty("backdropUrl").GetString().ShouldBe("https://image.tmdb.org/t/p/w780/backdrop-999.jpg");
+        items[0].GetProperty("releaseYear").GetInt32().ShouldBe(2019);
+        items[0].GetProperty("overview").GetString().ShouldBe("Recommendation overview.");
     }
 
     [Test]
