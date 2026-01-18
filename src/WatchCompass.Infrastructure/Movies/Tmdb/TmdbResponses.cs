@@ -8,6 +8,12 @@ public sealed class TmdbSearchResponse
     public List<TmdbMovieSearchResult> Results { get; init; } = [];
 }
 
+public sealed class TmdbGenreListResponse
+{
+    [JsonPropertyName("genres")]
+    public List<TmdbGenre> Genres { get; init; } = [];
+}
+
 public sealed class TmdbMovieSearchResult
 {
     [JsonPropertyName("id")]
@@ -64,6 +70,9 @@ public sealed class TmdbMovieDetailsResponse
 
 public sealed class TmdbGenre
 {
+    [JsonPropertyName("id")]
+    public int Id { get; init; }
+
     [JsonPropertyName("name")]
     public string Name { get; init; } = string.Empty;
 }

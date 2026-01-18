@@ -40,6 +40,7 @@ public class TmdbMovieCatalogIntegrationTests
     [Test]
     public async Task SearchAsync_ReturnsMappedResults()
     {
+        StubGenres("genres.json");
         StubSearch("matrix", "search.json");
 
         using var httpClient = CreateHttpClient();
@@ -51,11 +52,13 @@ public class TmdbMovieCatalogIntegrationTests
         results[0].MovieId.ShouldBe(100);
         results[0].Title.ShouldBe("Example Search Movie");
         results[0].RuntimeMinutes.ShouldBe(125);
+        results[0].Genres.ShouldBe(new[] { "Action", "Adventure" });
         results[0].PosterUrl.ShouldBe("https://image.tmdb.org/t/p/w500/poster-100.jpg");
         results[0].BackdropUrl.ShouldBe("https://image.tmdb.org/t/p/w780/backdrop-100.jpg");
         results[0].ReleaseYear.ShouldBe(2020);
         results[0].Overview.ShouldNotBeNullOrWhiteSpace();
         results[1].RuntimeMinutes.ShouldBeNull();
+        results[1].Genres.ShouldBe(new[] { "Comedy" });
         results[1].ReleaseYear.ShouldBeNull();
         results[1].Overview.ShouldBeNull();
     }
@@ -92,6 +95,19 @@ public class TmdbMovieCatalogIntegrationTests
         providers.ShouldBe(new[] { "Crave" });
     }
 
+    [Test]
+    public async Task GetGenresAsync_ReturnsDistinctSortedNames()
+    {
+        StubGenres("genres.json");
+
+        using var httpClient = CreateHttpClient();
+        var catalog = CreateCatalog(httpClient);
+
+        var genres = await catalog.GetGenresAsync();
+
+        genres.ShouldBe(new[] { "Action", "Adventure", "Comedy", "Drama" });
+    }
+
     private void StubSearch(string query, string fixtureName)
     {
         _server.Given(Request.Create()
@@ -100,6 +116,18 @@ public class TmdbMovieCatalogIntegrationTests
                 .WithParam("language", _options.Language)
                 .WithParam("include_adult", "false")
                 .WithParam("region", _options.DefaultCountryCode)
+                .UsingGet())
+            .RespondWith(Response.Create()
+                .WithStatusCode((int)HttpStatusCode.OK)
+                .WithHeader("Content-Type", "application/json")
+                .WithBodyFromFile(GetFixturePath(fixtureName)));
+    }
+
+    private void StubGenres(string fixtureName)
+    {
+        _server.Given(Request.Create()
+                .WithPath("/3/genre/movie/list")
+                .WithParam("language", _options.Language)
                 .UsingGet())
             .RespondWith(Response.Create()
                 .WithStatusCode((int)HttpStatusCode.OK)

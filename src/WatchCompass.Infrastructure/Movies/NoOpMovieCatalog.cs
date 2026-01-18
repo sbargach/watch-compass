@@ -26,4 +26,10 @@ public sealed class NoOpMovieCatalog : IMovieCatalog
         cancellationToken.ThrowIfCancellationRequested();
         return Task.FromResult<IReadOnlyList<string>>(Array.Empty<string>());
     }
+
+    public Task<IReadOnlyList<string>> GetGenresAsync(CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        return Task.FromResult<IReadOnlyList<string>>(Array.Empty<string>());
+    }
 }

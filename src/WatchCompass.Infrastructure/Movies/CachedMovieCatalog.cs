@@ -12,6 +12,7 @@ public sealed class CachedMovieCatalog : IMovieCatalog
     private readonly IMemoryCache _cache;
     private readonly MovieCatalogCacheOptions _options;
     private readonly ILogger<CachedMovieCatalog> _logger;
+    private const string GenresKey = "genres";
 
     public CachedMovieCatalog(IMovieCatalog inner, IMemoryCache cache, IOptions<MovieCatalogCacheOptions> options, ILogger<CachedMovieCatalog> logger)
     {
@@ -79,6 +80,18 @@ public sealed class CachedMovieCatalog : IMovieCatalog
 
         var providers = await _inner.GetWatchProvidersAsync(movieId, normalizedCountry, cancellationToken);
         return CacheOrReturn(key, providers, _options.ProvidersDuration);
+    }
+
+    public async Task<IReadOnlyList<string>> GetGenresAsync(CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        if (_cache.TryGetValue(GenresKey, out IReadOnlyList<string>? cached) && cached is not null)
+        {
+            return cached;
+        }
+
+        var genres = await _inner.GetGenresAsync(cancellationToken);
+        return CacheOrReturn(GenresKey, genres, _options.GenresDuration);
     }
 
     private T CacheOrReturn<T>(string key, T value, TimeSpan duration)

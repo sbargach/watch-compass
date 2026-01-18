@@ -140,5 +140,11 @@ public class GetRecommendationsUseCaseTests
             cancellationToken.ThrowIfCancellationRequested();
             return Task.FromResult(ProvidersById.TryGetValue(movieId, out var providers) ? providers : Array.Empty<string>());
         }
+
+        public Task<IReadOnlyList<string>> GetGenresAsync(CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return Task.FromResult<IReadOnlyList<string>>(Array.Empty<string>());
+        }
     }
 }

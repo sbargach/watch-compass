@@ -22,6 +22,9 @@ public sealed class TmdbMovieCatalog : IMovieCatalog
     private readonly ITmdbApiClient _apiClient;
     private readonly ILogger<TmdbMovieCatalog> _logger;
     private readonly TmdbOptions _options;
+    private readonly SemaphoreSlim _genreLock = new(1, 1);
+    private IReadOnlyDictionary<int, string> _genreLookup = new Dictionary<int, string>();
+    private DateTimeOffset? _genreExpiresAt;
 
     public TmdbMovieCatalog(ITmdbApiClient apiClient, IOptions<TmdbOptions> options, ILogger<TmdbMovieCatalog> logger)
     {
@@ -45,10 +48,13 @@ public sealed class TmdbMovieCatalog : IMovieCatalog
         try
         {
             var response = await _apiClient.SearchMoviesAsync(trimmedQuery, cancellationToken);
+            var genreLookup = response.Results.Any(result => result.GenreIds.Count > 0)
+                ? await GetGenreLookupAsync(cancellationToken)
+                : _genreLookup;
 
             return response.Results
                 .Where(result => result.Id > 0 && !string.IsNullOrWhiteSpace(result.Title))
-                .Select(MapSearchResult)
+                .Select(result => MapSearchResult(result, genreLookup))
                 .ToList();
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
@@ -56,6 +62,20 @@ public sealed class TmdbMovieCatalog : IMovieCatalog
             _logger.LogWarning(ex, "TMDB search failed for query {Query}", trimmedQuery);
             throw;
         }
+    }
+
+    public async Task<IReadOnlyList<string>> GetGenresAsync(CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        EnsureApiKey();
+
+        var lookup = await GetGenreLookupAsync(cancellationToken);
+        return lookup.Values
+            .Where(name => !string.IsNullOrWhiteSpace(name))
+            .Select(name => name.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(name => name, StringComparer.OrdinalIgnoreCase)
+            .ToList();
     }
 
     public async Task<MovieDetails?> GetDetailsAsync(int movieId, CancellationToken cancellationToken = default)
@@ -154,13 +174,60 @@ public sealed class TmdbMovieCatalog : IMovieCatalog
         }
     }
 
-    private MovieCard MapSearchResult(TmdbMovieSearchResult result)
+    private async Task<IReadOnlyDictionary<int, string>> GetGenreLookupAsync(CancellationToken cancellationToken)
     {
+        if (_genreLookup.Count > 0 && _genreExpiresAt is not null && _genreExpiresAt > DateTimeOffset.UtcNow)
+        {
+            return _genreLookup;
+        }
+
+        await _genreLock.WaitAsync(cancellationToken);
+        try
+        {
+            if (_genreLookup.Count > 0 && _genreExpiresAt is not null && _genreExpiresAt > DateTimeOffset.UtcNow)
+            {
+                return _genreLookup;
+            }
+
+            var response = await _apiClient.GetGenresAsync(cancellationToken);
+            _genreLookup = response.Genres
+                .Where(genre => genre.Id > 0 && !string.IsNullOrWhiteSpace(genre.Name))
+                .GroupBy(genre => genre.Id)
+                .ToDictionary(
+                    group => group.Key,
+                    group => group.First().Name.Trim(),
+                    comparer: EqualityComparer<int>.Default);
+            _genreExpiresAt = DateTimeOffset.UtcNow.AddHours(6);
+
+            return _genreLookup;
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            _logger.LogWarning(ex, "TMDB genre lookup failed.");
+            _genreLookup = new Dictionary<int, string>();
+            _genreExpiresAt = null;
+            return _genreLookup;
+        }
+        finally
+        {
+            _genreLock.Release();
+        }
+    }
+
+    private MovieCard MapSearchResult(TmdbMovieSearchResult result, IReadOnlyDictionary<int, string> genreLookup)
+    {
+        var genres = result.GenreIds
+            .Select(id => genreLookup.TryGetValue(id, out var name) ? name : null)
+            .Where(name => !string.IsNullOrWhiteSpace(name))
+            .Select(name => name!.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
         return new MovieCard(
             result.Id,
             result.Title.Trim(),
             NormalizeRuntime(result.Runtime),
-            Array.Empty<string>(),
+            genres,
             BuildImageUrl(result.PosterPath, PosterSize),
             BuildImageUrl(result.BackdropPath, BackdropSize),
             ParseYear(result.ReleaseDate),

@@ -56,6 +56,7 @@ public class ApiIntegrationTests
     [Test]
     public async Task SearchEndpoint_ReturnsItemsArray()
     {
+        StubGenres(LoadFixture("genres.json"));
         StubSearch("test", LoadFixture("search.json"));
 
         var response = await _client.GetAsync("/api/movies/search?query=test");
@@ -70,6 +71,27 @@ public class ApiIntegrationTests
         items[0].GetProperty("backdropUrl").GetString().ShouldBe("https://image.tmdb.org/t/p/w780/backdrop-100.jpg");
         items[0].GetProperty("releaseYear").GetInt32().ShouldBe(2020);
         items[0].GetProperty("overview").GetString().ShouldNotBeNull();
+        var genres = items[0].GetProperty("genres");
+        genres.GetArrayLength().ShouldBe(2);
+        genres[0].GetString().ShouldBe("Action");
+        genres[1].GetString().ShouldBe("Adventure");
+    }
+
+    [Test]
+    public async Task GenresEndpoint_ReturnsSortedList()
+    {
+        StubGenres(LoadFixture("genres.json"));
+
+        var response = await _client.GetAsync("/api/genres");
+
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var items = document.RootElement.GetProperty("items");
+        items.GetArrayLength().ShouldBe(4);
+        items[0].GetString().ShouldBe("Action");
+        items[1].GetString().ShouldBe("Adventure");
+        items[2].GetString().ShouldBe("Comedy");
+        items[3].GetString().ShouldBe("Drama");
     }
 
     [Test]
@@ -108,6 +130,7 @@ public class ApiIntegrationTests
     [Test]
     public async Task RecommendationsEndpoint_ReturnsProvidersFromTmdb()
     {
+        StubGenres(LoadFixture("genres.json"));
         var searchBody = """
         {
           "results": [
@@ -164,6 +187,73 @@ public class ApiIntegrationTests
         items[0].GetProperty("backdropUrl").GetString().ShouldBe("https://image.tmdb.org/t/p/w780/backdrop-999.jpg");
         items[0].GetProperty("releaseYear").GetInt32().ShouldBe(2019);
         items[0].GetProperty("overview").GetString().ShouldBe("Recommendation overview.");
+    }
+
+    [Test]
+    public async Task RecommendationsEndpoint_FiltersAvoidGenresFromSearch()
+    {
+        StubGenres(LoadFixture("genres.json"));
+        var searchBody = """
+        {
+          "results": [
+            {
+              "id": 501,
+              "title": "Skip Drama",
+              "runtime": 90,
+              "genre_ids": [18],
+              "poster_path": "/poster-501.jpg",
+              "backdrop_path": "/backdrop-501.jpg",
+              "release_date": "2018-01-01"
+            },
+            {
+              "id": 502,
+              "title": "Keep Comedy",
+              "runtime": 95,
+              "genre_ids": [35],
+              "poster_path": "/poster-502.jpg",
+              "backdrop_path": "/backdrop-502.jpg",
+              "release_date": "2018-02-02"
+            }
+          ]
+        }
+        """;
+        StubSearch("feelgood", searchBody);
+
+        var providersBody = """
+        {
+          "id": 502,
+          "results": {
+            "US": {
+              "flatrate": [
+                { "provider_name": "Prime Video" }
+              ],
+              "rent": [],
+              "buy": []
+            }
+          }
+        }
+        """;
+        StubWatchProviders(502, providersBody);
+
+        var payload = new
+        {
+            mood = "FeelGood",
+            timeBudgetMinutes = 120,
+            query = "feelgood",
+            avoidGenres = new[] { "Drama" },
+            countryCode = "US"
+        };
+
+        var response = await _client.PostAsJsonAsync("/api/recommendations", payload);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var items = document.RootElement.GetProperty("items");
+        items.GetArrayLength().ShouldBe(1);
+        items[0].GetProperty("movieId").GetInt32().ShouldBe(502);
+        var providers = items[0].GetProperty("providers");
+        providers.GetArrayLength().ShouldBe(1);
+        providers[0].GetString().ShouldBe("Prime Video");
     }
 
     [Test]
@@ -225,6 +315,18 @@ public class ApiIntegrationTests
                 .UsingGet()
                 .WithPath($"/3/movie/{movieId}/watch/providers")
                 .WithParam("watch_region", "US")
+                .WithParam("language", "en-US"))
+            .RespondWith(Response.Create()
+                .WithStatusCode((int)HttpStatusCode.OK)
+                .WithHeader("Content-Type", "application/json")
+                .WithBody(body));
+    }
+
+    private void StubGenres(string body)
+    {
+        _server.Given(Request.Create()
+                .UsingGet()
+                .WithPath("/3/genre/movie/list")
                 .WithParam("language", "en-US"))
             .RespondWith(Response.Create()
                 .WithStatusCode((int)HttpStatusCode.OK)

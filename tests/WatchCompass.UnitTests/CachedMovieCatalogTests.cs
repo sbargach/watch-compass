@@ -70,5 +70,10 @@ public class CachedMovieCatalogTests
             ProviderCalls++;
             return Task.FromResult<IReadOnlyList<string>>(new[] { $"Provider-{countryCode}" });
         }
+
+        public Task<IReadOnlyList<string>> GetGenresAsync(CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult<IReadOnlyList<string>>(Array.Empty<string>());
+        }
     }
 }

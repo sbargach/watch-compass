@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2026-01-18
+### Added
+- TMDB genre list exposed via new `/api/genres` endpoint and plumbed through catalog with caching.
+- Genre IDs in TMDB search results are resolved to names for API responses and avoid-genre filtering.
+
 ## [0.7.0] - 2026-01-17
 ### Added
 - TMDB mapping now surfaces poster/backdrop URLs, release year, and overview across search, details, and recommendations.
