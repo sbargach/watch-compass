@@ -11,4 +11,6 @@ public interface IMovieCatalog
     Task<IReadOnlyList<string>> GetWatchProvidersAsync(int movieId, string countryCode, CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<string>> GetGenresAsync(CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<MovieCard>> GetSimilarAsync(int movieId, CancellationToken cancellationToken = default);
 }

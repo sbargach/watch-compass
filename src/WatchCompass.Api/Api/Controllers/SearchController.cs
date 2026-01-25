@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using WatchCompass.Application.Dtos;
 using WatchCompass.Application.UseCases.MovieDetails;
 using WatchCompass.Application.UseCases.SearchMovies;
+using WatchCompass.Application.UseCases.SimilarMovies;
 using WatchCompass.Contracts;
 
 namespace WatchCompass.Api.Api.Controllers;
@@ -12,11 +13,16 @@ public sealed class SearchController : ControllerBase
 {
     private readonly SearchMoviesUseCase _searchMoviesUseCase;
     private readonly GetMovieDetailsUseCase _getMovieDetailsUseCase;
+    private readonly GetSimilarMoviesUseCase _getSimilarMoviesUseCase;
 
-    public SearchController(SearchMoviesUseCase searchMoviesUseCase, GetMovieDetailsUseCase getMovieDetailsUseCase)
+    public SearchController(
+        SearchMoviesUseCase searchMoviesUseCase,
+        GetMovieDetailsUseCase getMovieDetailsUseCase,
+        GetSimilarMoviesUseCase getSimilarMoviesUseCase)
     {
         _searchMoviesUseCase = searchMoviesUseCase;
         _getMovieDetailsUseCase = getMovieDetailsUseCase;
+        _getSimilarMoviesUseCase = getSimilarMoviesUseCase;
     }
 
     [HttpGet("search")]
@@ -33,6 +39,39 @@ public sealed class SearchController : ControllerBase
 
         var results = await _searchMoviesUseCase.SearchAsync(query, cancellationToken);
         var response = new SearchMoviesResponse
+        {
+            Items = results
+                .Select(movie => new MovieCardDto
+                {
+                    MovieId = movie.MovieId,
+                    Title = movie.Title,
+                    RuntimeMinutes = movie.RuntimeMinutes,
+                    Genres = movie.Genres,
+                    PosterUrl = movie.PosterUrl,
+                    BackdropUrl = movie.BackdropUrl,
+                    ReleaseYear = movie.ReleaseYear,
+                    Overview = movie.Overview
+                })
+                .ToList()
+        };
+
+        return Ok(response);
+    }
+
+    [HttpGet("{movieId:int}/similar")]
+    public async Task<ActionResult<GetSimilarMoviesResponse>> GetSimilar([FromRoute] int movieId, CancellationToken cancellationToken)
+    {
+        if (movieId <= 0)
+        {
+            return ToProblem(new ProblemDetails
+            {
+                Status = StatusCodes.Status400BadRequest,
+                Title = "Movie id must be positive."
+            });
+        }
+
+        var results = await _getSimilarMoviesUseCase.GetAsync(movieId, cancellationToken);
+        var response = new GetSimilarMoviesResponse
         {
             Items = results
                 .Select(movie => new MovieCardDto

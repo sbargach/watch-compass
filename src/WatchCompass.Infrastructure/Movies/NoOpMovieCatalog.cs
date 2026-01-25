@@ -32,4 +32,11 @@ public sealed class NoOpMovieCatalog : IMovieCatalog
         cancellationToken.ThrowIfCancellationRequested();
         return Task.FromResult<IReadOnlyList<string>>(Array.Empty<string>());
     }
+
+    public Task<IReadOnlyList<MovieCard>> GetSimilarAsync(int movieId, CancellationToken cancellationToken = default)
+    {
+        _ = movieId;
+        cancellationToken.ThrowIfCancellationRequested();
+        return Task.FromResult<IReadOnlyList<MovieCard>>(Array.Empty<MovieCard>());
+    }
 }

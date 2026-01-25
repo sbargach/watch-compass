@@ -3,6 +3,7 @@ using WatchCompass.Application.UseCases.Recommendations;
 using WatchCompass.Application.UseCases.MovieDetails;
 using WatchCompass.Application.UseCases.SearchMovies;
 using WatchCompass.Application.UseCases.Genres;
+using WatchCompass.Application.UseCases.SimilarMovies;
 
 namespace WatchCompass.Application.DependencyInjection;
 
@@ -14,6 +15,7 @@ public static class ApplicationServiceCollectionExtensions
         services.AddScoped<GetRecommendationsUseCase>();
         services.AddScoped<GetMovieDetailsUseCase>();
         services.AddScoped<GetGenresUseCase>();
+        services.AddScoped<GetSimilarMoviesUseCase>();
         return services;
     }
 }

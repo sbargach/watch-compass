@@ -94,6 +94,24 @@ public sealed class CachedMovieCatalog : IMovieCatalog
         return CacheOrReturn(GenresKey, genres, _options.GenresDuration);
     }
 
+    public async Task<IReadOnlyList<MovieCard>> GetSimilarAsync(int movieId, CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        if (movieId <= 0)
+        {
+            return Array.Empty<MovieCard>();
+        }
+
+        var key = $"similar:{movieId}";
+        if (_cache.TryGetValue(key, out IReadOnlyList<MovieCard>? cached) && cached is not null)
+        {
+            return cached;
+        }
+
+        var results = await _inner.GetSimilarAsync(movieId, cancellationToken);
+        return CacheOrReturn(key, results, _options.SimilarDuration);
+    }
+
     private T CacheOrReturn<T>(string key, T value, TimeSpan duration)
     {
         if (duration > TimeSpan.Zero)

@@ -294,6 +294,27 @@ public class ApiIntegrationTests
         title!.ToLowerInvariant().ShouldContain("invalid mood");
     }
 
+    [Test]
+    public async Task SimilarMoviesEndpoint_ReturnsItemsArray()
+    {
+        StubGenres(LoadFixture("genres.json"));
+        StubSimilar(150, LoadFixture("similar.json"));
+
+        var response = await _client.GetAsync("/api/movies/150/similar");
+
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var items = document.RootElement.GetProperty("items");
+        items.ValueKind.ShouldBe(JsonValueKind.Array);
+        items.GetArrayLength().ShouldBe(2);
+        items[0].GetProperty("movieId").GetInt32().ShouldBe(201);
+        items[0].GetProperty("genres").EnumerateArray().Select(e => e.GetString()).ShouldContain("Action");
+        items[0].GetProperty("posterUrl").GetString().ShouldBe("https://image.tmdb.org/t/p/w500/poster-201.jpg");
+        items[0].GetProperty("backdropUrl").GetString().ShouldBe("https://image.tmdb.org/t/p/w780/backdrop-201.jpg");
+        items[0].GetProperty("releaseYear").GetInt32().ShouldBe(2018);
+        items[0].GetProperty("overview").GetString().ShouldBe("First similar pick.");
+    }
+
     private void StubSearch(string query, string body)
     {
         _server.Given(Request.Create()
@@ -327,6 +348,18 @@ public class ApiIntegrationTests
         _server.Given(Request.Create()
                 .UsingGet()
                 .WithPath("/3/genre/movie/list")
+                .WithParam("language", "en-US"))
+            .RespondWith(Response.Create()
+                .WithStatusCode((int)HttpStatusCode.OK)
+                .WithHeader("Content-Type", "application/json")
+                .WithBody(body));
+    }
+
+    private void StubSimilar(int movieId, string body)
+    {
+        _server.Given(Request.Create()
+                .UsingGet()
+                .WithPath($"/3/movie/{movieId}/similar")
                 .WithParam("language", "en-US"))
             .RespondWith(Response.Create()
                 .WithStatusCode((int)HttpStatusCode.OK)

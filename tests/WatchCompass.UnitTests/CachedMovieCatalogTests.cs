@@ -36,6 +36,18 @@ public class CachedMovieCatalogTests
         inner.ProviderCalls.ShouldBe(1);
     }
 
+    [Test]
+    public async Task GetSimilarAsync_CachesByMovie()
+    {
+        var inner = new CountingMovieCatalog();
+        var catalog = CreateCatalog(inner);
+
+        await catalog.GetSimilarAsync(5);
+        await catalog.GetSimilarAsync(5);
+
+        inner.SimilarCalls.ShouldBe(1);
+    }
+
     private static CachedMovieCatalog CreateCatalog(CountingMovieCatalog inner)
     {
         var cache = new MemoryCache(new MemoryCacheOptions());
@@ -43,7 +55,8 @@ public class CachedMovieCatalogTests
         {
             SearchMinutes = 10,
             DetailsMinutes = 10,
-            ProvidersMinutes = 10
+            ProvidersMinutes = 10,
+            SimilarMinutes = 10
         });
 
         return new CachedMovieCatalog(inner, cache, options, NullLogger<CachedMovieCatalog>.Instance);
@@ -53,6 +66,7 @@ public class CachedMovieCatalogTests
     {
         public int SearchCalls { get; private set; }
         public int ProviderCalls { get; private set; }
+        public int SimilarCalls { get; private set; }
 
         public Task<IReadOnlyList<MovieCard>> SearchAsync(string query, CancellationToken cancellationToken = default)
         {
@@ -74,6 +88,12 @@ public class CachedMovieCatalogTests
         public Task<IReadOnlyList<string>> GetGenresAsync(CancellationToken cancellationToken = default)
         {
             return Task.FromResult<IReadOnlyList<string>>(Array.Empty<string>());
+        }
+
+        public Task<IReadOnlyList<MovieCard>> GetSimilarAsync(int movieId, CancellationToken cancellationToken = default)
+        {
+            SimilarCalls++;
+            return Task.FromResult<IReadOnlyList<MovieCard>>(new[] { new MovieCard(movieId, $"Similar-{movieId}", null, Array.Empty<string>()) });
         }
     }
 }

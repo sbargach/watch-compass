@@ -1,0 +1,24 @@
+{
+  "page": 1,
+  "results": [
+    {
+      "id": 201,
+      "title": "Similar One",
+      "runtime": 110,
+      "genre_ids": [28, 35],
+      "poster_path": "/poster-201.jpg",
+      "backdrop_path": "/backdrop-201.jpg",
+      "release_date": "2018-05-05",
+      "overview": "First similar pick."
+    },
+    {
+      "id": 202,
+      "title": "Similar Two",
+      "genre_ids": [18],
+      "poster_path": null,
+      "backdrop_path": "/backdrop-202.jpg",
+      "release_date": "",
+      "overview": null
+    }
+  ]
+}

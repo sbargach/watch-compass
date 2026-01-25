@@ -108,6 +108,28 @@ public class TmdbMovieCatalogIntegrationTests
         genres.ShouldBe(new[] { "Action", "Adventure", "Comedy", "Drama" });
     }
 
+    [Test]
+    public async Task GetSimilarAsync_ReturnsMappedResults()
+    {
+        StubGenres("genres.json");
+        StubSimilar(150, "similar.json");
+
+        using var httpClient = CreateHttpClient();
+        var catalog = CreateCatalog(httpClient);
+
+        var results = await catalog.GetSimilarAsync(150);
+
+        results.Count.ShouldBe(2);
+        results[0].MovieId.ShouldBe(201);
+        results[0].Title.ShouldBe("Similar One");
+        results[0].Genres.ShouldBe(new[] { "Action", "Comedy" });
+        results[0].RuntimeMinutes.ShouldBe(110);
+        results[0].PosterUrl.ShouldBe("https://image.tmdb.org/t/p/w500/poster-201.jpg");
+        results[0].BackdropUrl.ShouldBe("https://image.tmdb.org/t/p/w780/backdrop-201.jpg");
+        results[0].ReleaseYear.ShouldBe(2018);
+        results[0].Overview.ShouldBe("First similar pick.");
+    }
+
     private void StubSearch(string query, string fixtureName)
     {
         _server.Given(Request.Create()
@@ -152,6 +174,18 @@ public class TmdbMovieCatalogIntegrationTests
         _server.Given(Request.Create()
                 .WithPath($"/3/movie/{movieId}/watch/providers")
                 .WithParam("watch_region", expectedRegion)
+                .WithParam("language", _options.Language)
+                .UsingGet())
+            .RespondWith(Response.Create()
+                .WithStatusCode((int)HttpStatusCode.OK)
+                .WithHeader("Content-Type", "application/json")
+                .WithBodyFromFile(GetFixturePath(fixtureName)));
+    }
+
+    private void StubSimilar(int movieId, string fixtureName)
+    {
+        _server.Given(Request.Create()
+                .WithPath($"/3/movie/{movieId}/similar")
                 .WithParam("language", _options.Language)
                 .UsingGet())
             .RespondWith(Response.Create()

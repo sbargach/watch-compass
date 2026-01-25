@@ -18,6 +18,7 @@ public sealed class TmdbMovieCatalog : IMovieCatalog
     private static readonly KeyValuePair<string, object?> SearchTag = new("operation", "search");
     private static readonly KeyValuePair<string, object?> DetailsTag = new("operation", "details");
     private static readonly KeyValuePair<string, object?> ProvidersTag = new("operation", "providers");
+    private static readonly KeyValuePair<string, object?> SimilarTag = new("operation", "similar");
 
     private readonly ITmdbApiClient _apiClient;
     private readonly ILogger<TmdbMovieCatalog> _logger;
@@ -76,6 +77,36 @@ public sealed class TmdbMovieCatalog : IMovieCatalog
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .OrderBy(name => name, StringComparer.OrdinalIgnoreCase)
             .ToList();
+    }
+
+    public async Task<IReadOnlyList<MovieCard>> GetSimilarAsync(int movieId, CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        if (movieId <= 0)
+        {
+            return Array.Empty<MovieCard>();
+        }
+
+        EnsureApiKey();
+
+        CallsCounter.Add(1, SimilarTag);
+        try
+        {
+            var response = await _apiClient.GetSimilarMoviesAsync(movieId, cancellationToken);
+            var genreLookup = response.Results.Any(result => result.GenreIds.Count > 0)
+                ? await GetGenreLookupAsync(cancellationToken)
+                : _genreLookup;
+
+            return response.Results
+                .Where(result => result.Id > 0 && !string.IsNullOrWhiteSpace(result.Title))
+                .Select(result => MapSearchResult(result, genreLookup))
+                .ToList();
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            _logger.LogWarning(ex, "TMDB similar movies failed for {MovieId}", movieId);
+            throw;
+        }
     }
 
     public async Task<MovieDetails?> GetDetailsAsync(int movieId, CancellationToken cancellationToken = default)

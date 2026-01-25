@@ -19,7 +19,8 @@
 - Caching: in-memory decorator on TMDB catalog (configurable via `Caching:MovieCatalog`).
 
 ## API surface
-- `GET /api/movies/search?query=...` – find movies by query.
-- `GET /api/movies/{movieId}?countryCode=XX` – fetch details and available providers for a movie.
-- `POST /api/recommendations` – generate recommendations based on mood, time budget, and optional query/avoids.
+- `GET /api/movies/search?query=...` - find movies by query.
+- `GET /api/movies/{movieId}?countryCode=XX` - fetch details and available providers for a movie.
+- `GET /api/movies/{movieId}/similar` - fetch similar movies for a given title.
+- `POST /api/recommendations` - generate recommendations based on mood, time budget, and optional query/avoids.
 - Swagger UI available at `/swagger` (XML comments enabled).

@@ -13,6 +13,8 @@ public interface ITmdbApiClient
     Task<TmdbWatchProvidersResponse> GetWatchProvidersAsync(int movieId, string countryCode, CancellationToken cancellationToken = default);
 
     Task<TmdbGenreListResponse> GetGenresAsync(CancellationToken cancellationToken = default);
+
+    Task<TmdbSearchResponse> GetSimilarMoviesAsync(int movieId, CancellationToken cancellationToken = default);
 }
 
 public sealed class TmdbApiClient : ITmdbApiClient
@@ -78,6 +80,19 @@ public sealed class TmdbApiClient : ITmdbApiClient
         {
             return BuildRequest(
                 "genre/movie/list",
+                new Dictionary<string, string?>
+                {
+                    ["language"] = _options.Language
+                });
+        }, cancellationToken);
+    }
+
+    public Task<TmdbSearchResponse> GetSimilarMoviesAsync(int movieId, CancellationToken cancellationToken = default)
+    {
+        return _executor.SendAsync<TmdbSearchResponse>(() =>
+        {
+            return BuildRequest(
+                $"movie/{movieId}/similar",
                 new Dictionary<string, string?>
                 {
                     ["language"] = _options.Language

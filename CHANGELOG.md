@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.0] - 2026-01-25
+### Added
+- Similar movies surfaced via TMDB `/movie/{id}/similar` and exposed through new `/api/movies/{movieId}/similar` endpoint.
+- Caching support for similar results plus configurable cache durations for similar and genres.
+- Contracts, use cases, and integration coverage for similar movie responses.
+
 ## [0.8.0] - 2026-01-18
 ### Added
 - TMDB genre list exposed via new `/api/genres` endpoint and plumbed through catalog with caching.
