@@ -16,6 +16,11 @@ public sealed class TmdbOptionsValidator : IValidateOptions<TmdbOptions>
             return ValidateOptionsResult.Fail("Tmdb:BaseUrl must be an absolute URI.");
         }
 
+        if (string.IsNullOrWhiteSpace(options.ApiKey))
+        {
+            return ValidateOptionsResult.Fail("Tmdb:ApiKey is required.");
+        }
+
         if (string.IsNullOrWhiteSpace(options.DefaultCountryCode) || options.DefaultCountryCode.Trim().Length != 2)
         {
             return ValidateOptionsResult.Fail("Tmdb:DefaultCountryCode must be a two-letter country code.");
