@@ -48,6 +48,18 @@ public class CachedMovieCatalogTests
         inner.SimilarCalls.ShouldBe(1);
     }
 
+    [Test]
+    public async Task GetTrendingAsync_CachesTrendingResults()
+    {
+        var inner = new CountingMovieCatalog();
+        var catalog = CreateCatalog(inner);
+
+        await catalog.GetTrendingAsync();
+        await catalog.GetTrendingAsync();
+
+        inner.TrendingCalls.ShouldBe(1);
+    }
+
     private static CachedMovieCatalog CreateCatalog(CountingMovieCatalog inner)
     {
         var cache = new MemoryCache(new MemoryCacheOptions());
@@ -56,7 +68,8 @@ public class CachedMovieCatalogTests
             SearchMinutes = 10,
             DetailsMinutes = 10,
             ProvidersMinutes = 10,
-            SimilarMinutes = 10
+            SimilarMinutes = 10,
+            TrendingMinutes = 10
         });
 
         return new CachedMovieCatalog(inner, cache, options, NullLogger<CachedMovieCatalog>.Instance);
@@ -67,6 +80,7 @@ public class CachedMovieCatalogTests
         public int SearchCalls { get; private set; }
         public int ProviderCalls { get; private set; }
         public int SimilarCalls { get; private set; }
+        public int TrendingCalls { get; private set; }
 
         public Task<IReadOnlyList<MovieCard>> SearchAsync(string query, CancellationToken cancellationToken = default)
         {
@@ -94,6 +108,12 @@ public class CachedMovieCatalogTests
         {
             SimilarCalls++;
             return Task.FromResult<IReadOnlyList<MovieCard>>(new[] { new MovieCard(movieId, $"Similar-{movieId}", null, Array.Empty<string>()) });
+        }
+
+        public Task<IReadOnlyList<MovieCard>> GetTrendingAsync(CancellationToken cancellationToken = default)
+        {
+            TrendingCalls++;
+            return Task.FromResult<IReadOnlyList<MovieCard>>(new[] { new MovieCard(999, "Trending", 110, Array.Empty<string>()) });
         }
     }
 }

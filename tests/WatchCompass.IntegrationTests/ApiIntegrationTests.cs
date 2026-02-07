@@ -315,6 +315,25 @@ public class ApiIntegrationTests
         items[0].GetProperty("overview").GetString().ShouldBe("First similar pick.");
     }
 
+    [Test]
+    public async Task TrendingMoviesEndpoint_ReturnsLimitedItems()
+    {
+        StubGenres(LoadFixture("genres.json"));
+        StubTrending(LoadFixture("trending.json"));
+
+        var response = await _client.GetAsync("/api/movies/trending?limit=1");
+
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var items = document.RootElement.GetProperty("items");
+        items.ValueKind.ShouldBe(JsonValueKind.Array);
+        items.GetArrayLength().ShouldBe(1);
+        items[0].GetProperty("movieId").GetInt32().ShouldBe(301);
+        items[0].GetProperty("genres").EnumerateArray().Select(e => e.GetString()).ShouldContain("Action");
+        items[0].GetProperty("runtimeMinutes").GetInt32().ShouldBe(115);
+        items[0].GetProperty("releaseYear").GetInt32().ShouldBe(2024);
+    }
+
     private void StubSearch(string query, string body)
     {
         _server.Given(Request.Create()
@@ -360,6 +379,18 @@ public class ApiIntegrationTests
         _server.Given(Request.Create()
                 .UsingGet()
                 .WithPath($"/3/movie/{movieId}/similar")
+                .WithParam("language", "en-US"))
+            .RespondWith(Response.Create()
+                .WithStatusCode((int)HttpStatusCode.OK)
+                .WithHeader("Content-Type", "application/json")
+                .WithBody(body));
+    }
+
+    private void StubTrending(string body)
+    {
+        _server.Given(Request.Create()
+                .UsingGet()
+                .WithPath("/3/trending/movie/day")
                 .WithParam("language", "en-US"))
             .RespondWith(Response.Create()
                 .WithStatusCode((int)HttpStatusCode.OK)

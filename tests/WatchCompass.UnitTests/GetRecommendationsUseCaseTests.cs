@@ -153,5 +153,11 @@ public class GetRecommendationsUseCaseTests
             _ = movieId;
             return Task.FromResult<IReadOnlyList<MovieCard>>(Array.Empty<MovieCard>());
         }
+
+        public Task<IReadOnlyList<MovieCard>> GetTrendingAsync(CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return Task.FromResult<IReadOnlyList<MovieCard>>(Array.Empty<MovieCard>());
+        }
     }
 }

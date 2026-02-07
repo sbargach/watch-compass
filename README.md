@@ -20,6 +20,7 @@
 
 ## API surface
 - `GET /api/movies/search?query=...` - find movies by query.
+- `GET /api/movies/trending?limit=...` - fetch today's trending movies (limit defaults to 10, max 50).
 - `GET /api/movies/{movieId}?countryCode=XX` - fetch details and available providers for a movie.
 - `GET /api/movies/{movieId}/similar` - fetch similar movies for a given title.
 - `POST /api/recommendations` - generate recommendations based on mood, time budget, and optional query/avoids.

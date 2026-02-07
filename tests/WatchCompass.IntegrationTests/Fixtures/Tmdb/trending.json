@@ -1,0 +1,24 @@
+{
+  "page": 1,
+  "results": [
+    {
+      "id": 301,
+      "title": "Trending Headliner",
+      "runtime": 115,
+      "genre_ids": [28, 35],
+      "poster_path": "/poster-301.jpg",
+      "backdrop_path": "/backdrop-301.jpg",
+      "release_date": "2024-12-12",
+      "overview": "Top of the charts."
+    },
+    {
+      "id": 302,
+      "title": "Second Trend",
+      "genre_ids": [18],
+      "poster_path": "/poster-302.jpg",
+      "backdrop_path": null,
+      "release_date": "2023-05-01",
+      "overview": " "
+    }
+  ]
+}

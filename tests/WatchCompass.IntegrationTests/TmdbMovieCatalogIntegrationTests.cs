@@ -130,6 +130,31 @@ public class TmdbMovieCatalogIntegrationTests
         results[0].Overview.ShouldBe("First similar pick.");
     }
 
+    [Test]
+    public async Task GetTrendingAsync_ReturnsMappedResults()
+    {
+        StubGenres("genres.json");
+        StubTrending("trending.json");
+
+        using var httpClient = CreateHttpClient();
+        var catalog = CreateCatalog(httpClient);
+
+        var results = await catalog.GetTrendingAsync();
+
+        results.Count.ShouldBe(2);
+        results[0].MovieId.ShouldBe(301);
+        results[0].Title.ShouldBe("Trending Headliner");
+        results[0].Genres.ShouldBe(new[] { "Action", "Comedy" });
+        results[0].RuntimeMinutes.ShouldBe(115);
+        results[0].PosterUrl.ShouldBe("https://image.tmdb.org/t/p/w500/poster-301.jpg");
+        results[0].BackdropUrl.ShouldBe("https://image.tmdb.org/t/p/w780/backdrop-301.jpg");
+        results[0].ReleaseYear.ShouldBe(2024);
+        results[0].Overview.ShouldBe("Top of the charts.");
+        results[1].MovieId.ShouldBe(302);
+        results[1].Genres.ShouldBe(new[] { "Drama" });
+        results[1].ReleaseYear.ShouldBe(2023);
+    }
+
     private void StubSearch(string query, string fixtureName)
     {
         _server.Given(Request.Create()
@@ -186,6 +211,18 @@ public class TmdbMovieCatalogIntegrationTests
     {
         _server.Given(Request.Create()
                 .WithPath($"/3/movie/{movieId}/similar")
+                .WithParam("language", _options.Language)
+                .UsingGet())
+            .RespondWith(Response.Create()
+                .WithStatusCode((int)HttpStatusCode.OK)
+                .WithHeader("Content-Type", "application/json")
+                .WithBodyFromFile(GetFixturePath(fixtureName)));
+    }
+
+    private void StubTrending(string fixtureName)
+    {
+        _server.Given(Request.Create()
+                .WithPath("/3/trending/movie/day")
                 .WithParam("language", _options.Language)
                 .UsingGet())
             .RespondWith(Response.Create()

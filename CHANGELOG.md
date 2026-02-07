@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.0] - 2026-02-07
+### Added
+- Trending movies endpoint (`GET /api/movies/trending`) with configurable result limit and reuse of card metadata.
+- TMDB client/catalog support for daily trending titles plus in-memory caching and unit/integration coverage.
+- Configurable cache duration for trending results (defaults to 15 minutes).
+
 ## [0.9.1] - 2026-02-03
 ### Changed
 - TMDB options now require an API key during startup validation to fail fast on misconfiguration.

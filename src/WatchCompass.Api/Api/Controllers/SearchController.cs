@@ -3,6 +3,7 @@ using WatchCompass.Application.Dtos;
 using WatchCompass.Application.UseCases.MovieDetails;
 using WatchCompass.Application.UseCases.SearchMovies;
 using WatchCompass.Application.UseCases.SimilarMovies;
+using WatchCompass.Application.UseCases.TrendingMovies;
 using WatchCompass.Contracts;
 
 namespace WatchCompass.Api.Api.Controllers;
@@ -14,15 +15,18 @@ public sealed class SearchController : ControllerBase
     private readonly SearchMoviesUseCase _searchMoviesUseCase;
     private readonly GetMovieDetailsUseCase _getMovieDetailsUseCase;
     private readonly GetSimilarMoviesUseCase _getSimilarMoviesUseCase;
+    private readonly GetTrendingMoviesUseCase _getTrendingMoviesUseCase;
 
     public SearchController(
         SearchMoviesUseCase searchMoviesUseCase,
         GetMovieDetailsUseCase getMovieDetailsUseCase,
-        GetSimilarMoviesUseCase getSimilarMoviesUseCase)
+        GetSimilarMoviesUseCase getSimilarMoviesUseCase,
+        GetTrendingMoviesUseCase getTrendingMoviesUseCase)
     {
         _searchMoviesUseCase = searchMoviesUseCase;
         _getMovieDetailsUseCase = getMovieDetailsUseCase;
         _getSimilarMoviesUseCase = getSimilarMoviesUseCase;
+        _getTrendingMoviesUseCase = getTrendingMoviesUseCase;
     }
 
     [HttpGet("search")]
@@ -41,17 +45,31 @@ public sealed class SearchController : ControllerBase
         var response = new SearchMoviesResponse
         {
             Items = results
-                .Select(movie => new MovieCardDto
-                {
-                    MovieId = movie.MovieId,
-                    Title = movie.Title,
-                    RuntimeMinutes = movie.RuntimeMinutes,
-                    Genres = movie.Genres,
-                    PosterUrl = movie.PosterUrl,
-                    BackdropUrl = movie.BackdropUrl,
-                    ReleaseYear = movie.ReleaseYear,
-                    Overview = movie.Overview
-                })
+                .Select(ToMovieCardDto)
+                .ToList()
+        };
+
+        return Ok(response);
+    }
+
+    [HttpGet("trending")]
+    public async Task<ActionResult<GetTrendingMoviesResponse>> GetTrending([FromQuery] int? limit, CancellationToken cancellationToken)
+    {
+        var effectiveLimit = limit ?? 10;
+        if (effectiveLimit <= 0 || effectiveLimit > 50)
+        {
+            return ToProblem(new ProblemDetails
+            {
+                Status = StatusCodes.Status400BadRequest,
+                Title = "Limit must be between 1 and 50."
+            });
+        }
+
+        var results = await _getTrendingMoviesUseCase.GetAsync(effectiveLimit, cancellationToken);
+        var response = new GetTrendingMoviesResponse
+        {
+            Items = results
+                .Select(ToMovieCardDto)
                 .ToList()
         };
 
@@ -74,17 +92,7 @@ public sealed class SearchController : ControllerBase
         var response = new GetSimilarMoviesResponse
         {
             Items = results
-                .Select(movie => new MovieCardDto
-                {
-                    MovieId = movie.MovieId,
-                    Title = movie.Title,
-                    RuntimeMinutes = movie.RuntimeMinutes,
-                    Genres = movie.Genres,
-                    PosterUrl = movie.PosterUrl,
-                    BackdropUrl = movie.BackdropUrl,
-                    ReleaseYear = movie.ReleaseYear,
-                    Overview = movie.Overview
-                })
+                .Select(ToMovieCardDto)
                 .ToList()
         };
 
@@ -130,6 +138,21 @@ public sealed class SearchController : ControllerBase
         }
 
         return Ok(BuildResponse(details));
+    }
+
+    private static MovieCardDto ToMovieCardDto(MovieCard movie)
+    {
+        return new MovieCardDto
+        {
+            MovieId = movie.MovieId,
+            Title = movie.Title,
+            RuntimeMinutes = movie.RuntimeMinutes,
+            Genres = movie.Genres,
+            PosterUrl = movie.PosterUrl,
+            BackdropUrl = movie.BackdropUrl,
+            ReleaseYear = movie.ReleaseYear,
+            Overview = movie.Overview
+        };
     }
 
     private static ObjectResult ToProblem(ProblemDetails details)

@@ -19,6 +19,7 @@ public sealed class TmdbMovieCatalog : IMovieCatalog
     private static readonly KeyValuePair<string, object?> DetailsTag = new("operation", "details");
     private static readonly KeyValuePair<string, object?> ProvidersTag = new("operation", "providers");
     private static readonly KeyValuePair<string, object?> SimilarTag = new("operation", "similar");
+    private static readonly KeyValuePair<string, object?> TrendingTag = new("operation", "trending");
 
     private readonly ITmdbApiClient _apiClient;
     private readonly ILogger<TmdbMovieCatalog> _logger;
@@ -61,6 +62,31 @@ public sealed class TmdbMovieCatalog : IMovieCatalog
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
             _logger.LogWarning(ex, "TMDB search failed for query {Query}", trimmedQuery);
+            throw;
+        }
+    }
+
+    public async Task<IReadOnlyList<MovieCard>> GetTrendingAsync(CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        EnsureApiKey();
+
+        CallsCounter.Add(1, TrendingTag);
+        try
+        {
+            var response = await _apiClient.GetTrendingMoviesAsync(cancellationToken);
+            var genreLookup = response.Results.Any(result => result.GenreIds.Count > 0)
+                ? await GetGenreLookupAsync(cancellationToken)
+                : _genreLookup;
+
+            return response.Results
+                .Where(result => result.Id > 0 && !string.IsNullOrWhiteSpace(result.Title))
+                .Select(result => MapSearchResult(result, genreLookup))
+                .ToList();
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            _logger.LogWarning(ex, "TMDB trending movies failed.");
             throw;
         }
     }
