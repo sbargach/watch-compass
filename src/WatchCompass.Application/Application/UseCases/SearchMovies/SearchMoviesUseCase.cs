@@ -12,9 +12,11 @@ public sealed class SearchMoviesUseCase
         _movieCatalog = movieCatalog;
     }
 
-    public Task<IReadOnlyList<MovieCard>> SearchAsync(string query, CancellationToken cancellationToken = default)
+    public Task<PagedResult<MovieCard>> SearchAsync(string query, int page, int pageSize, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(query);
-        return _movieCatalog.SearchAsync(query, cancellationToken);
+        ArgumentOutOfRangeException.ThrowIfLessThan(page, 1);
+        ArgumentOutOfRangeException.ThrowIfLessThan(pageSize, 1);
+        return _movieCatalog.SearchPageAsync(query, page, pageSize, cancellationToken);
     }
 }

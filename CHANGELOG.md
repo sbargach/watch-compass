@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.11.0] - 2026-03-08
+### Added
+- Paginated movie search on `GET /api/movies/search` with `page` and `pageSize` query parameters.
+- Search response metadata (`page`, `pageSize`, `totalResults`, `totalPages`, `hasNextPage`) for frontend pagination flows.
+- TMDB-backed paged search mapping with support for slicing across TMDB page boundaries.
+
+### Changed
+- Search cache keys now include query + page + page size to keep pagination results deterministic.
+- Expanded unit and integration coverage for paginated search behavior and validation.
+
 ## [0.10.0] - 2026-02-07
 ### Added
 - Trending movies endpoint (`GET /api/movies/trending`) with configurable result limit and reuse of card metadata.

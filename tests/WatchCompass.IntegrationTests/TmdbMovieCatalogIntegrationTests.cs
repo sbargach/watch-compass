@@ -64,6 +64,26 @@ public class TmdbMovieCatalogIntegrationTests
     }
 
     [Test]
+    public async Task SearchPageAsync_ReturnsRequestedSliceAndMetadata()
+    {
+        StubGenres("genres.json");
+        StubSearch("matrix", "search.json");
+
+        using var httpClient = CreateHttpClient();
+        var catalog = CreateCatalog(httpClient);
+
+        var result = await catalog.SearchPageAsync("matrix", page: 2, pageSize: 1);
+
+        result.Items.Count.ShouldBe(1);
+        result.Items[0].MovieId.ShouldBe(101);
+        result.Page.ShouldBe(2);
+        result.PageSize.ShouldBe(1);
+        result.TotalResults.ShouldBe(42);
+        result.TotalPages.ShouldBe(42);
+        result.HasNextPage.ShouldBeTrue();
+    }
+
+    [Test]
     public async Task GetDetailsAsync_ReturnsGenresAndRuntime()
     {
         StubDetails(100, "details.json");
@@ -155,11 +175,12 @@ public class TmdbMovieCatalogIntegrationTests
         results[1].ReleaseYear.ShouldBe(2023);
     }
 
-    private void StubSearch(string query, string fixtureName)
+    private void StubSearch(string query, string fixtureName, int tmdbPage = 1)
     {
         _server.Given(Request.Create()
                 .WithPath("/3/search/movie")
                 .WithParam("query", query)
+                .WithParam("page", tmdbPage.ToString())
                 .WithParam("language", _options.Language)
                 .WithParam("include_adult", "false")
                 .WithParam("region", _options.DefaultCountryCode)

@@ -8,6 +8,9 @@ namespace WatchCompass.Infrastructure.Movies;
 
 public sealed class CachedMovieCatalog : IMovieCatalog
 {
+    private const int DefaultSearchPage = 1;
+    private const int DefaultSearchPageSize = 20;
+
     private readonly IMovieCatalog _inner;
     private readonly IMemoryCache _cache;
     private readonly MovieCatalogCacheOptions _options;
@@ -25,19 +28,26 @@ public sealed class CachedMovieCatalog : IMovieCatalog
 
     public async Task<IReadOnlyList<MovieCard>> SearchAsync(string query, CancellationToken cancellationToken = default)
     {
+        var paged = await SearchPageAsync(query, DefaultSearchPage, DefaultSearchPageSize, cancellationToken);
+        return paged.Items;
+    }
+
+    public async Task<PagedResult<MovieCard>> SearchPageAsync(string query, int page, int pageSize, CancellationToken cancellationToken = default)
+    {
         cancellationToken.ThrowIfCancellationRequested();
         if (string.IsNullOrWhiteSpace(query))
         {
-            return Array.Empty<MovieCard>();
+            return new PagedResult<MovieCard>(Array.Empty<MovieCard>(), page, pageSize, 0, 0, false);
         }
 
-        var key = $"search:{query.Trim().ToLowerInvariant()}";
-        if (_cache.TryGetValue(key, out IReadOnlyList<MovieCard>? cachedResults) && cachedResults is not null)
+        var normalizedQuery = query.Trim().ToLowerInvariant();
+        var key = $"search:{normalizedQuery}:{page}:{pageSize}";
+        if (_cache.TryGetValue(key, out PagedResult<MovieCard>? cachedResults) && cachedResults is not null)
         {
             return cachedResults;
         }
 
-        var results = await _inner.SearchAsync(query, cancellationToken);
+        var results = await _inner.SearchPageAsync(query, page, pageSize, cancellationToken);
         return CacheOrReturn(key, results, _options.SearchDuration);
     }
 

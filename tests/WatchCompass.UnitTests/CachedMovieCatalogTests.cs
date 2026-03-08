@@ -21,7 +21,7 @@ public class CachedMovieCatalogTests
         await catalog.SearchAsync(" Matrix ");
         await catalog.SearchAsync("matrix");
 
-        inner.SearchCalls.ShouldBe(1);
+        inner.SearchPageCalls.ShouldBe(1);
     }
 
     [Test]
@@ -77,15 +77,21 @@ public class CachedMovieCatalogTests
 
     private sealed class CountingMovieCatalog : IMovieCatalog
     {
-        public int SearchCalls { get; private set; }
+        public int SearchPageCalls { get; private set; }
         public int ProviderCalls { get; private set; }
         public int SimilarCalls { get; private set; }
         public int TrendingCalls { get; private set; }
 
         public Task<IReadOnlyList<MovieCard>> SearchAsync(string query, CancellationToken cancellationToken = default)
         {
-            SearchCalls++;
             return Task.FromResult<IReadOnlyList<MovieCard>>(new[] { new MovieCard(1, query.Trim(), 100, Array.Empty<string>()) });
+        }
+
+        public Task<PagedResult<MovieCard>> SearchPageAsync(string query, int page, int pageSize, CancellationToken cancellationToken = default)
+        {
+            SearchPageCalls++;
+            var items = new[] { new MovieCard(1, query.Trim(), 100, Array.Empty<string>()) }.Take(pageSize).ToList();
+            return Task.FromResult(new PagedResult<MovieCard>(items, page, pageSize, 1, 1, false));
         }
 
         public Task<MovieDetails?> GetDetailsAsync(int movieId, CancellationToken cancellationToken = default)

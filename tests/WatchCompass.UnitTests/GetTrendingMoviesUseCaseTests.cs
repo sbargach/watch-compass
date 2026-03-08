@@ -57,6 +57,14 @@ public class GetTrendingMoviesUseCaseTests
             throw new NotImplementedException();
         }
 
+        public Task<PagedResult<MovieCard>> SearchPageAsync(string query, int page, int pageSize, CancellationToken cancellationToken = default)
+        {
+            _ = query;
+            _ = page;
+            _ = pageSize;
+            throw new NotImplementedException();
+        }
+
         public Task<MovieDetails?> GetDetailsAsync(int movieId, CancellationToken cancellationToken = default)
         {
             _ = movieId;

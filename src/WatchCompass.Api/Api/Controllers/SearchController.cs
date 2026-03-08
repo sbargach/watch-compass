@@ -12,6 +12,10 @@ namespace WatchCompass.Api.Api.Controllers;
 [Route("api/movies")]
 public sealed class SearchController : ControllerBase
 {
+    private const int DefaultSearchPage = 1;
+    private const int DefaultSearchPageSize = 10;
+    private const int MaxSearchPageSize = 50;
+
     private readonly SearchMoviesUseCase _searchMoviesUseCase;
     private readonly GetMovieDetailsUseCase _getMovieDetailsUseCase;
     private readonly GetSimilarMoviesUseCase _getSimilarMoviesUseCase;
@@ -30,7 +34,11 @@ public sealed class SearchController : ControllerBase
     }
 
     [HttpGet("search")]
-    public async Task<ActionResult<SearchMoviesResponse>> Search([FromQuery] string? query, CancellationToken cancellationToken)
+    public async Task<ActionResult<SearchMoviesResponse>> Search(
+        [FromQuery] string? query,
+        [FromQuery] int? page,
+        [FromQuery] int? pageSize,
+        CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(query))
         {
@@ -41,12 +49,38 @@ public sealed class SearchController : ControllerBase
             });
         }
 
-        var results = await _searchMoviesUseCase.SearchAsync(query, cancellationToken);
+        var effectivePage = page ?? DefaultSearchPage;
+        if (effectivePage <= 0)
+        {
+            return ToProblem(new ProblemDetails
+            {
+                Status = StatusCodes.Status400BadRequest,
+                Title = "Page must be greater than 0."
+            });
+        }
+
+        var effectivePageSize = pageSize ?? DefaultSearchPageSize;
+        if (effectivePageSize <= 0 || effectivePageSize > MaxSearchPageSize)
+        {
+            return ToProblem(new ProblemDetails
+            {
+                Status = StatusCodes.Status400BadRequest,
+                Title = $"PageSize must be between 1 and {MaxSearchPageSize}."
+            });
+        }
+
+        var results = await _searchMoviesUseCase.SearchAsync(query, effectivePage, effectivePageSize, cancellationToken);
         var response = new SearchMoviesResponse
         {
             Items = results
+                .Items
                 .Select(ToMovieCardDto)
-                .ToList()
+                .ToList(),
+            Page = results.Page,
+            PageSize = results.PageSize,
+            TotalResults = results.TotalResults,
+            TotalPages = results.TotalPages,
+            HasNextPage = results.HasNextPage
         };
 
         return Ok(response);

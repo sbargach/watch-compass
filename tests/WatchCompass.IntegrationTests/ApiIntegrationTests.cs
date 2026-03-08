@@ -75,6 +75,43 @@ public class ApiIntegrationTests
         genres.GetArrayLength().ShouldBe(2);
         genres[0].GetString().ShouldBe("Action");
         genres[1].GetString().ShouldBe("Adventure");
+        document.RootElement.GetProperty("page").GetInt32().ShouldBe(1);
+        document.RootElement.GetProperty("pageSize").GetInt32().ShouldBe(10);
+        document.RootElement.GetProperty("totalResults").GetInt32().ShouldBe(42);
+        document.RootElement.GetProperty("totalPages").GetInt32().ShouldBe(5);
+        document.RootElement.GetProperty("hasNextPage").GetBoolean().ShouldBeTrue();
+    }
+
+    [Test]
+    public async Task SearchEndpoint_WithPaging_ReturnsRequestedSlice()
+    {
+        StubGenres(LoadFixture("genres.json"));
+        StubSearch("test", LoadFixture("search.json"));
+
+        var response = await _client.GetAsync("/api/movies/search?query=test&page=2&pageSize=1");
+
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var items = document.RootElement.GetProperty("items");
+        items.GetArrayLength().ShouldBe(1);
+        items[0].GetProperty("movieId").GetInt32().ShouldBe(101);
+        document.RootElement.GetProperty("page").GetInt32().ShouldBe(2);
+        document.RootElement.GetProperty("pageSize").GetInt32().ShouldBe(1);
+        document.RootElement.GetProperty("totalResults").GetInt32().ShouldBe(42);
+        document.RootElement.GetProperty("totalPages").GetInt32().ShouldBe(42);
+        document.RootElement.GetProperty("hasNextPage").GetBoolean().ShouldBeTrue();
+    }
+
+    [Test]
+    public async Task SearchEndpoint_WithInvalidPageSize_ReturnsProblemDetails()
+    {
+        var response = await _client.GetAsync("/api/movies/search?query=test&pageSize=0");
+
+        response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var title = document.RootElement.GetProperty("title").GetString();
+        title.ShouldNotBeNull();
+        title!.ToLowerInvariant().ShouldContain("pagesize");
     }
 
     [Test]
@@ -334,12 +371,13 @@ public class ApiIntegrationTests
         items[0].GetProperty("releaseYear").GetInt32().ShouldBe(2024);
     }
 
-    private void StubSearch(string query, string body)
+    private void StubSearch(string query, string body, int tmdbPage = 1)
     {
         _server.Given(Request.Create()
                 .UsingGet()
                 .WithPath("/3/search/movie")
                 .WithParam("query", query)
+                .WithParam("page", tmdbPage.ToString())
                 .WithParam("language", "en-US")
                 .WithParam("include_adult", "false")
                 .WithParam("region", "US"))

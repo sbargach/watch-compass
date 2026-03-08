@@ -4,6 +4,15 @@ namespace WatchCompass.Infrastructure.Movies.Tmdb;
 
 public sealed class TmdbSearchResponse
 {
+    [JsonPropertyName("page")]
+    public int Page { get; init; } = 1;
+
+    [JsonPropertyName("total_pages")]
+    public int TotalPages { get; init; } = 0;
+
+    [JsonPropertyName("total_results")]
+    public int TotalResults { get; init; } = 0;
+
     [JsonPropertyName("results")]
     public List<TmdbMovieSearchResult> Results { get; init; } = [];
 }

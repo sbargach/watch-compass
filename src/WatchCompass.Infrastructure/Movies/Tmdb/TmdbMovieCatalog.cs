@@ -9,6 +9,7 @@ namespace WatchCompass.Infrastructure.Movies.Tmdb;
 public sealed class TmdbMovieCatalog : IMovieCatalog
 {
     private const string DefaultCountryFallback = "US";
+    private const int TmdbSearchPageSize = 20;
     private const string ImageBaseUrl = "https://image.tmdb.org/t/p";
     private const string PosterSize = "w500";
     private const string BackdropSize = "w780";
@@ -37,10 +38,26 @@ public sealed class TmdbMovieCatalog : IMovieCatalog
 
     public async Task<IReadOnlyList<MovieCard>> SearchAsync(string query, CancellationToken cancellationToken = default)
     {
+        var paged = await SearchPageAsync(query, page: 1, pageSize: TmdbSearchPageSize, cancellationToken);
+        return paged.Items;
+    }
+
+    public async Task<PagedResult<MovieCard>> SearchPageAsync(string query, int page, int pageSize, CancellationToken cancellationToken = default)
+    {
         cancellationToken.ThrowIfCancellationRequested();
         if (string.IsNullOrWhiteSpace(query))
         {
-            return Array.Empty<MovieCard>();
+            return new PagedResult<MovieCard>(Array.Empty<MovieCard>(), page, pageSize, 0, 0, false);
+        }
+
+        if (page <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(page), "Page must be positive.");
+        }
+
+        if (pageSize <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(pageSize), "Page size must be positive.");
         }
 
         EnsureApiKey();
@@ -49,15 +66,47 @@ public sealed class TmdbMovieCatalog : IMovieCatalog
         CallsCounter.Add(1, SearchTag);
         try
         {
-            var response = await _apiClient.SearchMoviesAsync(trimmedQuery, cancellationToken);
-            var genreLookup = response.Results.Any(result => result.GenreIds.Count > 0)
+            var startIndex = (page - 1) * pageSize;
+            var startTmdbPage = (startIndex / TmdbSearchPageSize) + 1;
+            var endTmdbPage = ((startIndex + pageSize - 1) / TmdbSearchPageSize) + 1;
+
+            var aggregated = new List<TmdbMovieSearchResult>(Math.Max(pageSize, TmdbSearchPageSize));
+            var totalResults = 0;
+            for (var tmdbPage = startTmdbPage; tmdbPage <= endTmdbPage; tmdbPage++)
+            {
+                var response = await _apiClient.SearchMoviesAsync(trimmedQuery, tmdbPage, cancellationToken);
+                totalResults = Math.Max(0, response.TotalResults);
+
+                if (response.Results.Count == 0)
+                {
+                    break;
+                }
+
+                aggregated.AddRange(response.Results);
+                if (tmdbPage >= response.TotalPages)
+                {
+                    break;
+                }
+            }
+
+            var genreLookup = aggregated.Any(result => result.GenreIds.Count > 0)
                 ? await GetGenreLookupAsync(cancellationToken)
                 : _genreLookup;
 
-            return response.Results
+            var skipWithinAggregate = startIndex % TmdbSearchPageSize;
+            var items = aggregated
+                .Skip(skipWithinAggregate)
+                .Take(pageSize)
                 .Where(result => result.Id > 0 && !string.IsNullOrWhiteSpace(result.Title))
                 .Select(result => MapSearchResult(result, genreLookup))
                 .ToList();
+
+            var totalPages = totalResults == 0
+                ? 0
+                : (int)Math.Ceiling(totalResults / (double)pageSize);
+            var hasNextPage = page < totalPages;
+
+            return new PagedResult<MovieCard>(items, page, pageSize, totalResults, totalPages, hasNextPage);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
