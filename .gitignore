@@ -28,3 +28,7 @@ TestResult*/
 coverage*/
 *.lcov
 TestResults/
+
+# Frontend artifacts
+frontend/node_modules/
+frontend/dist/

@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.12.0] - 2026-03-15
+### Added
+- Frontend app scaffold (`frontend/`) using React + TypeScript + Vite.
+- Initial UI for trending movies and paginated movie search, wired to `/api/movies/trending` and `/api/movies/search`.
+- Typed frontend API client and reusable UI components for movie cards and pagination.
+
+### Changed
+- Added configurable API CORS policy with development origins for local frontend integration.
+- Updated project documentation with frontend setup/run instructions.
+- Bumped project package versions from `0.11.0` to `0.12.0` across Domain, Contracts, Application, Infrastructure, and API projects.
+
 ## [0.11.0] - 2026-03-08
 ### Added
 - Paginated movie search on `GET /api/movies/search` with `page` and `pageSize` query parameters.

@@ -9,6 +9,12 @@ using WatchCompass.Application.DependencyInjection;
 using WatchCompass.Infrastructure.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
+const string FrontendCorsPolicy = "Frontend";
+
+var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>();
+allowedOrigins = allowedOrigins is { Length: > 0 }
+    ? allowedOrigins
+    : ["http://localhost:5173", "http://127.0.0.1:5173"];
 
 builder.Host.UseSerilog((context, services, loggerConfiguration) =>
 {
@@ -21,6 +27,16 @@ builder.Host.UseSerilog((context, services, loggerConfiguration) =>
 
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(FrontendCorsPolicy, policy =>
+    {
+        policy
+            .WithOrigins(allowedOrigins)
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+    });
+});
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
@@ -63,6 +79,7 @@ var app = builder.Build();
 
 app.UseSerilogRequestLogging();
 app.UseMiddleware<ExceptionHandlingMiddleware>();
+app.UseCors(FrontendCorsPolicy);
 
 if (app.Environment.IsDevelopment())
 {
