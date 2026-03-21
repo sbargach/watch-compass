@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.13.0] - 2026-03-21
+### Added
+- Selectable movie cards in the frontend, opening a rich details panel backed by `GET /api/movies/{movieId}`.
+- Similar movie exploration in the details panel, wired to `GET /api/movies/{movieId}/similar`.
+- Provider badges, backdrop treatment, and active-card states to make the search and trending flows feel connected.
+- Frontend regression coverage for the active-movie selection flow to protect the details panel state machine.
+
+### Fixed
+- Re-selecting the active movie no longer resets the details panel into a loading state without issuing a new request.
+- Selectable movie tiles now use valid HTML structure with a dedicated overlay button instead of block content nested inside a button.
+
+### Changed
+- Bumped project package versions from `0.12.0` to `0.13.0` across Domain, Contracts, Application, Infrastructure, API, and frontend packages.
+
 ## [0.12.0] - 2026-03-15
 ### Added
 - Frontend app scaffold (`frontend/`) using React + TypeScript + Vite.

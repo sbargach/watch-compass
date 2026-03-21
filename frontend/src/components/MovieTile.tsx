@@ -2,9 +2,11 @@ import type { MovieCard } from "../types/movies";
 
 type MovieTileProps = {
   movie: MovieCard;
+  onSelect?: (movie: MovieCard) => void;
+  isActive?: boolean;
 };
 
-export function MovieTile({ movie }: MovieTileProps) {
+export function MovieTile({ movie, onSelect, isActive = false }: MovieTileProps) {
   const meta: string[] = [];
   if (movie.releaseYear) {
     meta.push(String(movie.releaseYear));
@@ -15,8 +17,8 @@ export function MovieTile({ movie }: MovieTileProps) {
 
   const genreText = movie.genres.length > 0 ? movie.genres.slice(0, 3).join(" / ") : "Genre unavailable";
 
-  return (
-    <article className="movie-tile">
+  const content = (
+    <>
       <div className="movie-tile-poster">
         {movie.posterUrl ? (
           <img src={movie.posterUrl} alt={`${movie.title} poster`} loading="lazy" />
@@ -33,6 +35,23 @@ export function MovieTile({ movie }: MovieTileProps) {
         <p className="movie-genres">{genreText}</p>
         <p className="movie-overview">{movie.overview?.trim() || "No overview available yet."}</p>
       </div>
-    </article>
+    </>
   );
+
+  if (onSelect) {
+    return (
+      <article className={`movie-tile movie-tile-selectable${isActive ? " movie-tile-active" : ""}`}>
+        <button
+          type="button"
+          className="movie-tile-button"
+          onClick={() => onSelect(movie)}
+          aria-label={`View details for ${movie.title}`}
+          aria-pressed={isActive}
+        />
+        {content}
+      </article>
+    );
+  }
+
+  return <article className="movie-tile">{content}</article>;
 }

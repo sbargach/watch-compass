@@ -1,8 +1,15 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { getApiBaseUrl, getTrendingMovies, searchMovies } from "./api/moviesApi";
+import {
+  getApiBaseUrl,
+  getMovieDetails,
+  getSimilarMovies,
+  getTrendingMovies,
+  searchMovies
+} from "./api/moviesApi";
+import { MovieDetailsPanel } from "./components/MovieDetailsPanel";
 import { MovieGrid } from "./components/MovieGrid";
 import { Pagination } from "./components/Pagination";
-import type { MovieCard, SearchMoviesResponse } from "./types/movies";
+import type { MovieCard, MovieDetails, SearchMoviesResponse } from "./types/movies";
 
 const SEARCH_PAGE_SIZE = 12;
 const TRENDING_LIMIT = 12;
@@ -19,6 +26,37 @@ type SearchState = {
   error: string | null;
 };
 
+type DetailsState = {
+  details: MovieDetails | null;
+  similarMovies: MovieCard[];
+  isLoading: boolean;
+  isSimilarLoading: boolean;
+  error: string | null;
+  similarError: string | null;
+};
+
+function createEmptyDetailsState(): DetailsState {
+  return {
+    details: null,
+    similarMovies: [],
+    isLoading: false,
+    isSimilarLoading: false,
+    error: null,
+    similarError: null
+  };
+}
+
+function createLoadingDetailsState(): DetailsState {
+  return {
+    details: null,
+    similarMovies: [],
+    isLoading: true,
+    isSimilarLoading: true,
+    error: null,
+    similarError: null
+  };
+}
+
 function App() {
   const [queryInput, setQueryInput] = useState("");
   const [activeQuery, setActiveQuery] = useState("");
@@ -34,6 +72,8 @@ function App() {
     isLoading: false,
     error: null
   });
+  const [selectedMovie, setSelectedMovie] = useState<MovieCard | null>(null);
+  const [detailsState, setDetailsState] = useState<DetailsState>(() => createEmptyDetailsState());
 
   useEffect(() => {
     let isActive = true;
@@ -114,11 +154,88 @@ function App() {
     };
   }, [activeQuery, searchPage, searchNonce]);
 
+  useEffect(() => {
+    if (selectedMovie === null) {
+      return;
+    }
+
+    let isActive = true;
+
+    void getMovieDetails(selectedMovie.movieId)
+      .then((details) => {
+        if (!isActive) {
+          return;
+        }
+
+        setDetailsState((current) => ({
+          ...current,
+          details,
+          isLoading: false
+        }));
+      })
+      .catch((error: unknown) => {
+        if (!isActive) {
+          return;
+        }
+
+        setDetailsState((current) => ({
+          ...current,
+          details: null,
+          isLoading: false,
+          error: toErrorMessage(error)
+        }));
+      });
+
+    void getSimilarMovies(selectedMovie.movieId)
+      .then((response) => {
+        if (!isActive) {
+          return;
+        }
+
+        setDetailsState((current) => ({
+          ...current,
+          similarMovies: response.items,
+          isSimilarLoading: false
+        }));
+      })
+      .catch((error: unknown) => {
+        if (!isActive) {
+          return;
+        }
+
+        setDetailsState((current) => ({
+          ...current,
+          similarMovies: [],
+          isSimilarLoading: false,
+          similarError: toErrorMessage(error)
+        }));
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, [selectedMovie]);
+
+  const clearSelectedMovie = () => {
+    setSelectedMovie(null);
+    setDetailsState(createEmptyDetailsState());
+  };
+
+  const handleSelectMovie = (movie: MovieCard) => {
+    if (selectedMovie?.movieId === movie.movieId) {
+      return;
+    }
+
+    setSelectedMovie(movie);
+    setDetailsState(createLoadingDetailsState());
+  };
+
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const trimmedQuery = queryInput.trim();
 
     if (trimmedQuery.length === 0) {
+      clearSelectedMovie();
       setActiveQuery("");
       setSearchPage(1);
       setSearchState({
@@ -129,6 +246,7 @@ function App() {
       return;
     }
 
+    clearSelectedMovie();
     setSearchPage(1);
     setActiveQuery(trimmedQuery);
     setSearchNonce((current) => current + 1);
@@ -167,11 +285,25 @@ function App() {
           <p className="api-target">API: {getApiBaseUrl()}</p>
         </section>
 
+        {selectedMovie && (
+          <MovieDetailsPanel
+            selectedMovie={selectedMovie}
+            details={detailsState.details}
+            similarMovies={detailsState.similarMovies}
+            isLoading={detailsState.isLoading}
+            isSimilarLoading={detailsState.isSimilarLoading}
+            error={detailsState.error}
+            similarError={detailsState.similarError}
+            onClose={clearSelectedMovie}
+            onSelectMovie={handleSelectMovie}
+          />
+        )}
+
         {!hasSearch && (
           <section className="content-section">
             <div className="section-heading">
               <h2>Trending Today</h2>
-              <p>Fresh picks from the TMDB-backed API.</p>
+              <p>Fresh picks from the TMDB-backed API. Select a card to open details and similar titles.</p>
             </div>
 
             {trendingState.isLoading && <p className="status-text">Loading trending movies...</p>}
@@ -179,7 +311,13 @@ function App() {
             {!trendingState.isLoading && !trendingState.error && trendingState.items.length === 0 && (
               <p className="status-text">No trending movies were returned.</p>
             )}
-            {trendingState.items.length > 0 && <MovieGrid movies={trendingState.items} />}
+            {trendingState.items.length > 0 && (
+              <MovieGrid
+                movies={trendingState.items}
+                onSelectMovie={handleSelectMovie}
+                selectedMovieId={selectedMovie?.movieId}
+              />
+            )}
           </section>
         )}
 
@@ -189,7 +327,7 @@ function App() {
               <h2>Search Results</h2>
               <p>
                 Query: <strong>{activeQuery}</strong>
-                {searchState.result && ` (${searchState.result.totalResults} results)`}
+                {searchState.result && ` (${searchState.result.totalResults} results). Select a card for deeper context.`}
               </p>
             </div>
 
@@ -200,7 +338,11 @@ function App() {
             )}
             {hasSearchResults && (
               <>
-                <MovieGrid movies={searchState.result?.items ?? []} />
+                <MovieGrid
+                  movies={searchState.result?.items ?? []}
+                  onSelectMovie={handleSelectMovie}
+                  selectedMovieId={selectedMovie?.movieId}
+                />
                 <Pagination
                   page={searchState.result?.page ?? 1}
                   totalPages={searchState.result?.totalPages ?? 1}

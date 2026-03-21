@@ -17,6 +17,8 @@ obj/
 
 # Dotnet artifacts
 TestResult*/
+.dotnet/
+.nuget/
 .idea/
 .DS_Store
 

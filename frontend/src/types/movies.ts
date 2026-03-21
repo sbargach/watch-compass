@@ -9,7 +9,15 @@ export interface MovieCard {
   overview: string | null;
 }
 
+export interface MovieDetails extends MovieCard {
+  providers: string[];
+}
+
 export interface TrendingMoviesResponse {
+  items: MovieCard[];
+}
+
+export interface SimilarMoviesResponse {
   items: MovieCard[];
 }
 
