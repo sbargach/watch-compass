@@ -22,6 +22,23 @@ export async function requestJson<T>(path: string): Promise<T> {
   return (await response.json()) as T;
 }
 
+export async function postJson<TResponse>(path: string, payload: unknown): Promise<TResponse> {
+  const response = await fetch(`${apiBaseUrl}${path}`, {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(payload)
+  });
+
+  if (!response.ok) {
+    throw await toApiError(response);
+  }
+
+  return (await response.json()) as TResponse;
+}
+
 export function getApiBaseUrl(): string {
   return apiBaseUrl;
 }

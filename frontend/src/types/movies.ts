@@ -13,12 +13,35 @@ export interface MovieDetails extends MovieCard {
   providers: string[];
 }
 
+export type Mood = "Chill" | "FeelGood" | "Intense" | "Scary";
+
+export interface Recommendation extends MovieCard {
+  providers: string[];
+  reasons: string[];
+}
+
+export interface RecommendationsRequest {
+  mood: Mood;
+  timeBudgetMinutes: number;
+  query?: string;
+  avoidGenres: string[];
+  countryCode: string;
+}
+
 export interface TrendingMoviesResponse {
   items: MovieCard[];
 }
 
 export interface SimilarMoviesResponse {
   items: MovieCard[];
+}
+
+export interface GenresResponse {
+  items: string[];
+}
+
+export interface RecommendationsResponse {
+  items: Recommendation[];
 }
 
 export interface SearchMoviesResponse {

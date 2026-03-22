@@ -1,5 +1,6 @@
 import { MovieGrid } from "./MovieGrid";
 import type { MovieCard, MovieDetails } from "../types/movies";
+import { PosterArtwork } from "./PosterArtwork";
 
 type MovieDetailsPanelProps = {
   selectedMovie: MovieCard;
@@ -45,13 +46,7 @@ export function MovieDetailsPanel({
 
         <div className="details-hero">
           <div className="details-poster">
-            {movie.posterUrl ? (
-              <img src={movie.posterUrl} alt={`${movie.title} poster`} loading="lazy" />
-            ) : (
-              <div className="poster-fallback" aria-hidden="true">
-                {movie.title.slice(0, 1).toUpperCase()}
-              </div>
-            )}
+            <PosterArtwork title={movie.title} posterUrl={movie.posterUrl} />
           </div>
 
           <div className="details-copy">

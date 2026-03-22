@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.14.0] - 2026-03-22
+### Added
+- Frontend recommendation builder with mood, time budget, optional hint, country code, and avoid-genre controls.
+- Recommendation results UI showing why each pick fits plus provider badges, wired to `POST /api/recommendations`.
+- Frontend recommendation coverage validating the new form payload and rendered result flow.
+- Shared poster artwork component with graceful fallback when posters are missing or fail to load.
+
+### Changed
+- Refined the recommendation area into a stronger visual primary flow with improved hierarchy, spacing, and accent treatment.
+- Reworked recommendation and trending cards to reduce text crowding, improve readability, and clamp long summaries more cleanly.
+- Bumped project package versions from `0.13.0` to `0.14.0` across Domain, Contracts, Application, Infrastructure, API, and frontend packages.
+
 ## [0.13.0] - 2026-03-21
 ### Added
 - Selectable movie cards in the frontend, opening a rich details panel backed by `GET /api/movies/{movieId}`.

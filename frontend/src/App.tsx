@@ -1,7 +1,9 @@
 import { useEffect, useState, type FormEvent } from "react";
 import {
   getApiBaseUrl,
+  getGenres,
   getMovieDetails,
+  getRecommendations,
   getSimilarMovies,
   getTrendingMovies,
   searchMovies
@@ -9,10 +11,19 @@ import {
 import { MovieDetailsPanel } from "./components/MovieDetailsPanel";
 import { MovieGrid } from "./components/MovieGrid";
 import { Pagination } from "./components/Pagination";
-import type { MovieCard, MovieDetails, SearchMoviesResponse } from "./types/movies";
+import { RecommendationGrid } from "./components/RecommendationGrid";
+import type {
+  Mood,
+  MovieCard,
+  MovieDetails,
+  Recommendation,
+  RecommendationsRequest,
+  SearchMoviesResponse
+} from "./types/movies";
 
 const SEARCH_PAGE_SIZE = 12;
 const TRENDING_LIMIT = 12;
+const MOODS: readonly Mood[] = ["FeelGood", "Chill", "Intense", "Scary"];
 
 type TrendingState = {
   items: MovieCard[];
@@ -33,6 +44,27 @@ type DetailsState = {
   isSimilarLoading: boolean;
   error: string | null;
   similarError: string | null;
+};
+
+type GenresState = {
+  items: string[];
+  isLoading: boolean;
+  error: string | null;
+};
+
+type RecommendationState = {
+  items: Recommendation[];
+  isLoading: boolean;
+  error: string | null;
+  hasRequested: boolean;
+};
+
+type RecommendationFormState = {
+  mood: Mood;
+  timeBudgetMinutes: string;
+  query: string;
+  countryCode: string;
+  avoidGenres: string[];
 };
 
 function createEmptyDetailsState(): DetailsState {
@@ -57,6 +89,16 @@ function createLoadingDetailsState(): DetailsState {
   };
 }
 
+function createInitialRecommendationFormState(): RecommendationFormState {
+  return {
+    mood: "FeelGood",
+    timeBudgetMinutes: "120",
+    query: "",
+    countryCode: "NL",
+    avoidGenres: []
+  };
+}
+
 function App() {
   const [queryInput, setQueryInput] = useState("");
   const [activeQuery, setActiveQuery] = useState("");
@@ -74,6 +116,20 @@ function App() {
   });
   const [selectedMovie, setSelectedMovie] = useState<MovieCard | null>(null);
   const [detailsState, setDetailsState] = useState<DetailsState>(() => createEmptyDetailsState());
+  const [genresState, setGenresState] = useState<GenresState>({
+    items: [],
+    isLoading: true,
+    error: null
+  });
+  const [recommendationForm, setRecommendationForm] = useState<RecommendationFormState>(() =>
+    createInitialRecommendationFormState()
+  );
+  const [recommendationState, setRecommendationState] = useState<RecommendationState>({
+    items: [],
+    isLoading: false,
+    error: null,
+    hasRequested: false
+  });
 
   useEffect(() => {
     let isActive = true;
@@ -103,6 +159,38 @@ function App() {
     };
 
     void loadTrending();
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let isActive = true;
+
+    void getGenres()
+      .then((response) => {
+        if (!isActive) {
+          return;
+        }
+
+        setGenresState({
+          items: response.items,
+          isLoading: false,
+          error: null
+        });
+      })
+      .catch((error: unknown) => {
+        if (!isActive) {
+          return;
+        }
+
+        setGenresState({
+          items: [],
+          isLoading: false,
+          error: toErrorMessage(error)
+        });
+      });
 
     return () => {
       isActive = false;
@@ -252,8 +340,57 @@ function App() {
     setSearchNonce((current) => current + 1);
   };
 
+  const handleRecommendationSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const parsedTimeBudget = Number.parseInt(recommendationForm.timeBudgetMinutes, 10);
+    if (Number.isNaN(parsedTimeBudget) || parsedTimeBudget < 1 || parsedTimeBudget > 600) {
+      setRecommendationState({
+        items: [],
+        isLoading: false,
+        error: "Time budget must be between 1 and 600 minutes.",
+        hasRequested: true
+      });
+      return;
+    }
+
+    const request: RecommendationsRequest = {
+      mood: recommendationForm.mood,
+      timeBudgetMinutes: parsedTimeBudget,
+      query: recommendationForm.query.trim() || undefined,
+      avoidGenres: recommendationForm.avoidGenres,
+      countryCode: recommendationForm.countryCode.trim().toUpperCase() || "NL"
+    };
+
+    clearSelectedMovie();
+    setRecommendationState({
+      items: [],
+      isLoading: true,
+      error: null,
+      hasRequested: true
+    });
+
+    try {
+      const response = await getRecommendations(request);
+      setRecommendationState({
+        items: response.items,
+        isLoading: false,
+        error: null,
+        hasRequested: true
+      });
+    } catch (error) {
+      setRecommendationState({
+        items: [],
+        isLoading: false,
+        error: toErrorMessage(error),
+        hasRequested: true
+      });
+    }
+  };
+
   const hasSearch = activeQuery.length > 0;
   const hasSearchResults = (searchState.result?.items.length ?? 0) > 0;
+  const hasRecommendations = recommendationState.items.length > 0;
 
   return (
     <div className="app-shell">
@@ -265,7 +402,7 @@ function App() {
           <p className="hero-kicker">Watch Compass</p>
           <h1>Movie Discovery Desk</h1>
           <p className="hero-description">
-            Frontend integration for trending titles and paginated search on top of your API.
+            Frontend integration for trending titles, search, and recommendation workflows on top of your API.
           </p>
         </header>
 
@@ -283,6 +420,149 @@ function App() {
             </button>
           </form>
           <p className="api-target">API: {getApiBaseUrl()}</p>
+        </section>
+
+        <section className="recommendation-panel">
+          <div className="recommendation-panel-header">
+            <div>
+              <p className="panel-kicker">Recommendation Studio</p>
+              <h2>Recommendation Builder</h2>
+            </div>
+            <p className="recommendation-panel-copy">
+              Shape a mood-based recommendation run with time budget, country context, and genre exclusions.
+            </p>
+          </div>
+
+          <form className="recommendation-form" onSubmit={handleRecommendationSubmit}>
+            <label className="field">
+              <span>Mood</span>
+              <select
+                value={recommendationForm.mood}
+                onChange={(event) =>
+                  setRecommendationForm((current) => ({
+                    ...current,
+                    mood: event.target.value as Mood
+                  }))
+                }
+              >
+                {MOODS.map((mood) => (
+                  <option key={mood} value={mood}>
+                    {formatMoodLabel(mood)}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="field">
+              <span>Time budget (minutes)</span>
+              <input
+                type="number"
+                min={1}
+                max={600}
+                value={recommendationForm.timeBudgetMinutes}
+                onChange={(event) =>
+                  setRecommendationForm((current) => ({
+                    ...current,
+                    timeBudgetMinutes: event.target.value
+                  }))
+                }
+              />
+            </label>
+
+            <label className="field">
+              <span>Country code</span>
+              <input
+                type="text"
+                maxLength={2}
+                value={recommendationForm.countryCode}
+                onChange={(event) =>
+                  setRecommendationForm((current) => ({
+                    ...current,
+                    countryCode: event.target.value.replace(/[^a-z]/gi, "").toUpperCase()
+                  }))
+                }
+              />
+            </label>
+
+            <label className="field field-wide">
+              <span>Optional hint</span>
+              <input
+                type="text"
+                placeholder="Actor, franchise, vibe..."
+                value={recommendationForm.query}
+                onChange={(event) =>
+                  setRecommendationForm((current) => ({
+                    ...current,
+                    query: event.target.value
+                  }))
+                }
+              />
+            </label>
+
+            <div className="field field-full">
+              <span>Avoid genres</span>
+              {genresState.isLoading && <p className="status-text">Loading genres...</p>}
+              {genresState.error && <p className="status-text status-error">{genresState.error}</p>}
+              {!genresState.isLoading && !genresState.error && genresState.items.length === 0 && (
+                <p className="status-text">No genres were returned.</p>
+              )}
+              {genresState.items.length > 0 && (
+                <div className="genre-chip-list">
+                  {genresState.items.map((genre) => {
+                    const isSelected = recommendationForm.avoidGenres.includes(genre);
+
+                    return (
+                      <button
+                        key={genre}
+                        type="button"
+                        className={`genre-chip${isSelected ? " genre-chip-selected" : ""}`}
+                        onClick={() =>
+                          setRecommendationForm((current) => ({
+                            ...current,
+                            avoidGenres: current.avoidGenres.includes(genre)
+                              ? current.avoidGenres.filter((item) => item !== genre)
+                              : [...current.avoidGenres, genre]
+                          }))
+                        }
+                        aria-pressed={isSelected}
+                      >
+                        {genre}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            <div className="recommendation-actions">
+              <button type="submit" disabled={recommendationState.isLoading}>
+                {recommendationState.isLoading ? "Curating..." : "Get recommendations"}
+              </button>
+            </div>
+          </form>
+
+          {recommendationState.error && <p className="status-text status-error">{recommendationState.error}</p>}
+          {recommendationState.isLoading && <p className="status-text">Loading recommendations...</p>}
+          {recommendationState.hasRequested && !recommendationState.isLoading && !recommendationState.error && !hasRecommendations && (
+            <p className="status-text">No recommendations matched the current filters.</p>
+          )}
+
+          {hasRecommendations && (
+            <div className="recommendation-results">
+              <div className="section-heading recommendation-results-heading">
+                <h2>Recommendation Results</h2>
+                <p>
+                  {recommendationState.items.length} picks for <strong>{formatMoodLabel(recommendationForm.mood)}</strong>.
+                </p>
+              </div>
+
+              <RecommendationGrid
+                recommendations={recommendationState.items}
+                selectedMovieId={selectedMovie?.movieId}
+                onSelectRecommendation={(recommendation) => handleSelectMovie(toMovieCard(recommendation))}
+              />
+            </div>
+          )}
         </section>
 
         {selectedMovie && (
@@ -359,6 +639,28 @@ function App() {
       </main>
     </div>
   );
+}
+
+function formatMoodLabel(mood: Mood): string {
+  switch (mood) {
+    case "FeelGood":
+      return "Feel Good";
+    default:
+      return mood;
+  }
+}
+
+function toMovieCard(recommendation: Recommendation): MovieCard {
+  return {
+    movieId: recommendation.movieId,
+    title: recommendation.title,
+    runtimeMinutes: recommendation.runtimeMinutes,
+    genres: recommendation.genres,
+    posterUrl: recommendation.posterUrl,
+    backdropUrl: recommendation.backdropUrl,
+    releaseYear: recommendation.releaseYear,
+    overview: recommendation.overview
+  };
 }
 
 function toErrorMessage(error: unknown): string {

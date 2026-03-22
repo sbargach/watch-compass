@@ -1,4 +1,5 @@
 import type { MovieCard } from "../types/movies";
+import { PosterArtwork } from "./PosterArtwork";
 
 type MovieTileProps = {
   movie: MovieCard;
@@ -20,13 +21,7 @@ export function MovieTile({ movie, onSelect, isActive = false }: MovieTileProps)
   const content = (
     <>
       <div className="movie-tile-poster">
-        {movie.posterUrl ? (
-          <img src={movie.posterUrl} alt={`${movie.title} poster`} loading="lazy" />
-        ) : (
-          <div className="poster-fallback" aria-hidden="true">
-            {movie.title.slice(0, 1).toUpperCase()}
-          </div>
-        )}
+        <PosterArtwork title={movie.title} posterUrl={movie.posterUrl} />
       </div>
 
       <div className="movie-tile-content">

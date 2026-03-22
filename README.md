@@ -21,7 +21,7 @@
 - Infrastructure: TMDB-backed `IMovieCatalog` using `HttpClientFactory`, options, retries, and provider mapping.
 - API: ASP.NET Core entrypoint, DI wiring, controllers, middleware, and telemetry.
 - Caching: in-memory decorator on TMDB catalog (configurable via `Caching:MovieCatalog`).
-- Frontend: React + TypeScript + Vite client (`frontend/`) consuming trending, paginated search, movie details, and similar-title endpoints.
+- Frontend: React + TypeScript + Vite client (`frontend/`) consuming trending, paginated search, recommendation, movie details, and similar-title endpoints.
 
 ## API surface
 - `GET /api/movies/search?query=...&page=1&pageSize=10` - find movies by query with paged results (`pageSize` max 50).

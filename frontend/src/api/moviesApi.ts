@@ -1,6 +1,9 @@
-import { getApiBaseUrl, requestJson } from "./http";
+import { getApiBaseUrl, postJson, requestJson } from "./http";
 import type {
+  GenresResponse,
   MovieDetails,
+  RecommendationsRequest,
+  RecommendationsResponse,
   SearchMoviesResponse,
   SimilarMoviesResponse,
   TrendingMoviesResponse
@@ -42,4 +45,14 @@ export async function getMovieDetails(
 
 export async function getSimilarMovies(movieId: number): Promise<SimilarMoviesResponse> {
   return requestJson<SimilarMoviesResponse>(`/api/movies/${movieId}/similar`);
+}
+
+export async function getGenres(): Promise<GenresResponse> {
+  return requestJson<GenresResponse>("/api/genres");
+}
+
+export async function getRecommendations(
+  request: RecommendationsRequest
+): Promise<RecommendationsResponse> {
+  return postJson<RecommendationsResponse>("/api/recommendations", request);
 }

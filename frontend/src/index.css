@@ -4,10 +4,12 @@
   --bg: #f6f8f7;
   --surface: #ffffff;
   --surface-border: #dde4df;
+  --surface-soft: rgba(255, 255, 255, 0.9);
   --text: #13201b;
   --muted: #4e6259;
   --accent: #0f766e;
   --accent-strong: #115e59;
+  --accent-soft: rgba(15, 118, 110, 0.1);
   --warning: #b91c1c;
   --shadow: 0 20px 45px rgba(19, 32, 27, 0.08);
   font-family: "IBM Plex Sans", sans-serif;
@@ -95,18 +97,163 @@ body {
 }
 
 .search-panel {
-  background: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.8);
   border: 1px solid var(--surface-border);
   border-radius: 1rem;
-  padding: 1rem;
-  box-shadow: var(--shadow);
+  padding: 0.95rem;
+  box-shadow: 0 14px 30px rgba(19, 32, 27, 0.06);
   backdrop-filter: blur(8px);
   animation: slide-up 520ms ease-out both;
+}
+
+.recommendation-panel {
+  position: relative;
+  margin-top: 1.3rem;
+  background:
+    linear-gradient(180deg, rgba(228, 247, 240, 0.72), rgba(255, 255, 255, 0) 9rem),
+    var(--surface-soft);
+  border: 1px solid var(--surface-border);
+  border-radius: 1.25rem;
+  padding: 1.25rem;
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(8px);
+  animation: slide-up 600ms ease-out both;
+}
+
+.recommendation-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 0.45rem;
+  border-radius: 1.25rem 1.25rem 0 0;
+  background: linear-gradient(90deg, #0f766e, #f59e0b);
+}
+
+.recommendation-panel-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(18rem, 24rem);
+  gap: 1rem;
+  align-items: end;
+  margin-bottom: 1.1rem;
+}
+
+.panel-kicker {
+  margin: 0 0 0.35rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--accent-strong);
+  font-weight: 700;
+  font-size: 0.78rem;
+}
+
+.recommendation-panel-copy {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.45;
 }
 
 .search-form {
   display: flex;
   gap: 0.75rem;
+}
+
+.recommendation-form {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.9rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.field span {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.field input,
+.field select {
+  width: 100%;
+  border: 1px solid #c6d2ca;
+  border-radius: 0.8rem;
+  padding: 0.75rem 0.9rem;
+  font: inherit;
+  color: var(--text);
+  background: #fff;
+}
+
+.field input:focus,
+.field select:focus {
+  outline: 2px solid rgba(15, 118, 110, 0.25);
+  border-color: var(--accent);
+}
+
+.field-wide {
+  grid-column: span 2;
+}
+
+.field-full {
+  grid-column: 1 / -1;
+}
+
+.genre-chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.genre-chip {
+  border: 1px solid #c6d2ca;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--text);
+  padding: 0.5rem 0.85rem;
+  font: inherit;
+  cursor: pointer;
+}
+
+.genre-chip-selected {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.recommendation-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-start;
+}
+
+.recommendation-actions button {
+  border: none;
+  border-radius: 0.8rem;
+  padding: 0.75rem 1.1rem;
+  font: inherit;
+  font-weight: 600;
+  color: #fff;
+  background: linear-gradient(140deg, #115e59, #0f766e);
+  cursor: pointer;
+}
+
+.recommendation-actions button:disabled,
+.genre-chip:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.recommendation-results {
+  margin-top: 1.5rem;
+}
+
+.recommendation-results-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 1rem;
 }
 
 .search-form input {
@@ -295,19 +442,147 @@ body {
 
 .movie-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(245px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
   gap: 1rem;
+}
+
+.recommendation-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 1.1rem;
+}
+
+.recommendation-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: 112px 1fr;
+  gap: 1rem;
+  align-items: start;
+  background:
+    linear-gradient(180deg, rgba(15, 118, 110, 0.05), rgba(15, 118, 110, 0)),
+    var(--surface);
+  border: 1px solid rgba(17, 94, 89, 0.12);
+  border-radius: 1.15rem;
+  padding: 1rem;
+  box-shadow: 0 20px 36px rgba(19, 32, 27, 0.08);
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.recommendation-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(17, 94, 89, 0.32);
+}
+
+.recommendation-card-button {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border: none;
+  border-radius: inherit;
+  background: transparent;
+  cursor: pointer;
+}
+
+.recommendation-card:focus-within {
+  outline: 2px solid rgba(15, 118, 110, 0.35);
+  outline-offset: 2px;
+}
+
+.recommendation-card-active {
+  border-color: rgba(17, 94, 89, 0.72);
+  box-shadow: 0 18px 36px rgba(17, 94, 89, 0.16);
+}
+
+.recommendation-card-poster,
+.recommendation-card-content {
+  position: relative;
+  z-index: 1;
+}
+
+.recommendation-card-poster img,
+.recommendation-card-poster .poster-fallback {
+  width: 112px;
+  height: 168px;
+  border-radius: 0.75rem;
+  object-fit: cover;
+  box-shadow: 0 12px 26px rgba(19, 32, 27, 0.12);
+}
+
+.recommendation-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  gap: 0.85rem;
+}
+
+.recommendation-card-content h3 {
+  margin: 0;
+  font-size: 1.15rem;
+  font-family: "Space Grotesk", sans-serif;
+}
+
+.recommendation-group {
+  margin-top: 0.85rem;
+}
+
+.recommendation-group-highlight {
+  padding: 0.8rem 0.9rem;
+  border-radius: 0.95rem;
+  background: rgba(15, 118, 110, 0.06);
+  border: 1px solid rgba(17, 94, 89, 0.12);
+}
+
+.recommendation-label {
+  margin: 0;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--accent-strong);
+}
+
+.recommendation-list {
+  margin: 0.45rem 0 0;
+  padding-left: 1.1rem;
+  color: #2d3f36;
+}
+
+.recommendation-list li + li {
+  margin-top: 0.3rem;
+}
+
+.recommendation-chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  margin-top: 0.5rem;
+}
+
+.recommendation-chip-list-compact {
+  margin-top: 0;
+  justify-content: end;
+}
+
+.recommendation-chip {
+  border-radius: 999px;
+  padding: 0.42rem 0.75rem;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-size: 0.85rem;
 }
 
 .movie-tile {
   display: grid;
-  grid-template-columns: 92px 1fr;
-  gap: 0.85rem;
-  background: var(--surface);
+  grid-template-columns: 104px 1fr;
+  gap: 1rem;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), #fff);
   border: 1px solid var(--surface-border);
-  border-radius: 1rem;
-  padding: 0.75rem;
-  box-shadow: var(--shadow);
+  border-radius: 1.05rem;
+  padding: 0.95rem;
+  box-shadow: 0 18px 34px rgba(19, 32, 27, 0.07);
 }
 
 .movie-tile-selectable {
@@ -354,9 +629,10 @@ body {
 }
 
 .movie-tile-poster img,
+.movie-tile-poster .poster-fallback,
 .poster-fallback {
-  width: 92px;
-  height: 138px;
+  width: 104px;
+  height: 156px;
   border-radius: 0.7rem;
   object-fit: cover;
 }
@@ -372,7 +648,8 @@ body {
 
 .movie-tile-content h3 {
   margin: 0;
-  font-size: 1rem;
+  font-size: 1.05rem;
+  font-family: "Space Grotesk", sans-serif;
 }
 
 .movie-meta,
@@ -387,6 +664,14 @@ body {
   font-size: 0.92rem;
   color: #2d3f36;
   line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.recommendation-overview {
+  -webkit-line-clamp: 2;
 }
 
 .pagination {
@@ -446,6 +731,43 @@ body {
     flex-direction: column;
   }
 
+  .recommendation-panel {
+    padding: 1rem;
+  }
+
+  .recommendation-panel-header,
+  .recommendation-results-heading {
+    grid-template-columns: 1fr;
+    display: grid;
+  }
+
+  .recommendation-form {
+    grid-template-columns: 1fr;
+  }
+
+  .field-wide,
+  .field-full {
+    grid-column: auto;
+  }
+
+  .recommendation-card {
+    grid-template-columns: 96px 1fr;
+  }
+
+  .recommendation-card-poster img,
+  .recommendation-card-poster .poster-fallback {
+    width: 96px;
+    height: 144px;
+  }
+
+  .recommendation-card-header {
+    flex-direction: column;
+  }
+
+  .recommendation-chip-list-compact {
+    justify-content: start;
+  }
+
   .details-hero {
     grid-template-columns: 1fr;
   }
@@ -457,12 +779,13 @@ body {
   }
 
   .movie-tile {
-    grid-template-columns: 80px 1fr;
+    grid-template-columns: 92px 1fr;
   }
 
   .movie-tile-poster img,
+  .movie-tile-poster .poster-fallback,
   .poster-fallback {
-    width: 80px;
-    height: 120px;
+    width: 92px;
+    height: 138px;
   }
 }
