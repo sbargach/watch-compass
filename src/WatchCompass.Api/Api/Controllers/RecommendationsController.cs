@@ -86,6 +86,7 @@ public sealed class RecommendationsController : ControllerBase
                     MovieId = rec.MovieId,
                     Title = rec.Title,
                     RuntimeMinutes = rec.RuntimeMinutes,
+                    Genres = rec.Genres,
                     Reasons = rec.Reasons,
                     Providers = providersByMovie.TryGetValue(rec.MovieId, out var providers)
                         ? providers

@@ -14,7 +14,12 @@ const trendingMovie = {
   overview: "A linguist works to understand a new visitor."
 };
 
-const detailsMovie = {
+const detailsMovieNl = {
+  ...trendingMovie,
+  providers: ["Videoland", "Apple TV"]
+};
+
+const detailsMovieUs = {
   ...trendingMovie,
   providers: ["Netflix", "Apple TV"]
 };
@@ -53,8 +58,8 @@ describe("App", () => {
         return createJsonResponse({ items: ["Comedy", "Horror", "Drama"] });
       }
 
-      if (url.endsWith("/api/movies/1")) {
-        return createJsonResponse(detailsMovie);
+      if (url.endsWith("/api/movies/1?countryCode=NL")) {
+        return createJsonResponse(detailsMovieNl);
       }
 
       if (url.endsWith("/api/movies/1/similar")) {
@@ -71,8 +76,8 @@ describe("App", () => {
     const selectMovieButton = await screen.findByRole("button", { name: "View details for Arrival" });
     await userEvent.click(selectMovieButton);
 
-    await screen.findByText("Where to watch");
-    expect(screen.getByText("Netflix")).toBeInTheDocument();
+    await screen.findByText("Where to watch in Netherlands (NL)");
+    expect(screen.getByText("Videoland")).toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledTimes(4);
 
     await userEvent.click(selectMovieButton);
@@ -83,6 +88,51 @@ describe("App", () => {
 
     expect(screen.queryByText("Loading movie details...")).not.toBeInTheDocument();
     expect(screen.getByText("Apple TV")).toBeInTheDocument();
+  });
+
+  it("reloads provider availability when the watch region changes", async () => {
+    fetchMock.mockImplementation(async (input) => {
+      const url = String(input);
+
+      if (url.endsWith("/api/movies/trending?limit=12")) {
+        return createJsonResponse({ items: [trendingMovie] });
+      }
+
+      if (url.endsWith("/api/genres")) {
+        return createJsonResponse({ items: ["Comedy", "Horror", "Drama"] });
+      }
+
+      if (url.endsWith("/api/movies/1?countryCode=NL")) {
+        return createJsonResponse(detailsMovieNl);
+      }
+
+      if (url.endsWith("/api/movies/1?countryCode=US")) {
+        return createJsonResponse(detailsMovieUs);
+      }
+
+      if (url.endsWith("/api/movies/1/similar")) {
+        return createJsonResponse({ items: [] });
+      }
+
+      throw new Error(`Unexpected fetch call: ${url}`);
+    });
+
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<App />);
+
+    await userEvent.click(await screen.findByRole("button", { name: "View details for Arrival" }));
+    await screen.findByText("Videoland");
+
+    await userEvent.selectOptions(screen.getByLabelText("Watch region"), "US");
+
+    await screen.findByText("Where to watch in United States (US)");
+    await screen.findByText("Netflix");
+    expect(screen.queryByText("Videoland")).not.toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledTimes(5);
+    });
   });
 
   it("submits the recommendation form and renders recommendation results", async () => {
@@ -105,7 +155,7 @@ describe("App", () => {
             timeBudgetMinutes: 95,
             query: "time loop",
             avoidGenres: ["Horror"],
-            countryCode: "NL"
+            countryCode: "US"
           })
         );
 
@@ -121,6 +171,7 @@ describe("App", () => {
 
     await screen.findByRole("button", { name: "Horror" });
 
+    await userEvent.selectOptions(screen.getByLabelText("Watch region"), "US");
     await userEvent.clear(screen.getByLabelText("Time budget (minutes)"));
     await userEvent.type(screen.getByLabelText("Time budget (minutes)"), "95");
     await userEvent.type(screen.getByLabelText("Optional hint"), "time loop");

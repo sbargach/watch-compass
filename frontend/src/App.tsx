@@ -24,6 +24,16 @@ import type {
 const SEARCH_PAGE_SIZE = 12;
 const TRENDING_LIMIT = 12;
 const MOODS: readonly Mood[] = ["FeelGood", "Chill", "Intense", "Scary"];
+const DEFAULT_WATCH_REGION = "NL";
+const WATCH_REGIONS = [
+  { code: "NL", label: "Netherlands" },
+  { code: "US", label: "United States" },
+  { code: "GB", label: "United Kingdom" },
+  { code: "DE", label: "Germany" },
+  { code: "FR", label: "France" },
+  { code: "BE", label: "Belgium" },
+  { code: "CA", label: "Canada" }
+] as const;
 
 type TrendingState = {
   items: MovieCard[];
@@ -63,7 +73,6 @@ type RecommendationFormState = {
   mood: Mood;
   timeBudgetMinutes: string;
   query: string;
-  countryCode: string;
   avoidGenres: string[];
 };
 
@@ -94,7 +103,6 @@ function createInitialRecommendationFormState(): RecommendationFormState {
     mood: "FeelGood",
     timeBudgetMinutes: "120",
     query: "",
-    countryCode: "NL",
     avoidGenres: []
   };
 }
@@ -121,6 +129,7 @@ function App() {
     isLoading: true,
     error: null
   });
+  const [watchRegion, setWatchRegion] = useState(DEFAULT_WATCH_REGION);
   const [recommendationForm, setRecommendationForm] = useState<RecommendationFormState>(() =>
     createInitialRecommendationFormState()
   );
@@ -242,14 +251,24 @@ function App() {
     };
   }, [activeQuery, searchPage, searchNonce]);
 
+  const selectedMovieId = selectedMovie?.movieId ?? null;
+  const watchRegionLabel = getWatchRegionLabel(watchRegion);
+
   useEffect(() => {
-    if (selectedMovie === null) {
+    if (selectedMovieId === null) {
       return;
     }
 
     let isActive = true;
 
-    void getMovieDetails(selectedMovie.movieId)
+    setDetailsState((current) => ({
+      ...current,
+      details: current.details?.movieId === selectedMovieId ? current.details : null,
+      isLoading: true,
+      error: null
+    }));
+
+    void getMovieDetails(selectedMovieId, watchRegion)
       .then((details) => {
         if (!isActive) {
           return;
@@ -274,7 +293,25 @@ function App() {
         }));
       });
 
-    void getSimilarMovies(selectedMovie.movieId)
+    return () => {
+      isActive = false;
+    };
+  }, [selectedMovieId, watchRegion]);
+
+  useEffect(() => {
+    if (selectedMovieId === null) {
+      return;
+    }
+
+    let isActive = true;
+
+    setDetailsState((current) => ({
+      ...current,
+      isSimilarLoading: true,
+      similarError: null
+    }));
+
+    void getSimilarMovies(selectedMovieId)
       .then((response) => {
         if (!isActive) {
           return;
@@ -302,7 +339,7 @@ function App() {
     return () => {
       isActive = false;
     };
-  }, [selectedMovie]);
+  }, [selectedMovieId]);
 
   const clearSelectedMovie = () => {
     setSelectedMovie(null);
@@ -359,7 +396,7 @@ function App() {
       timeBudgetMinutes: parsedTimeBudget,
       query: recommendationForm.query.trim() || undefined,
       avoidGenres: recommendationForm.avoidGenres,
-      countryCode: recommendationForm.countryCode.trim().toUpperCase() || "NL"
+      countryCode: watchRegion
     };
 
     clearSelectedMovie();
@@ -407,19 +444,35 @@ function App() {
         </header>
 
         <section className="search-panel">
-          <form className="search-form" onSubmit={handleSubmit}>
-            <input
-              type="search"
-              placeholder="Search movies by title..."
-              value={queryInput}
-              onChange={(event) => setQueryInput(event.target.value)}
-              aria-label="Search movies"
-            />
-            <button type="submit" disabled={searchState.isLoading}>
-              {searchState.isLoading ? "Searching..." : "Search"}
-            </button>
-          </form>
-          <p className="api-target">API: {getApiBaseUrl()}</p>
+          <div className="search-toolbar">
+            <form className="search-form" onSubmit={handleSubmit}>
+              <input
+                type="search"
+                placeholder="Search movies by title..."
+                value={queryInput}
+                onChange={(event) => setQueryInput(event.target.value)}
+                aria-label="Search movies"
+              />
+              <button type="submit" disabled={searchState.isLoading}>
+                {searchState.isLoading ? "Searching..." : "Search"}
+              </button>
+            </form>
+
+            <label className="field search-region-field">
+              <span>Watch region</span>
+              <select value={watchRegion} onChange={(event) => setWatchRegion(event.target.value)}>
+                {WATCH_REGIONS.map((region) => (
+                  <option key={region.code} value={region.code}>
+                    {region.label} ({region.code})
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          <p className="api-target">
+            API: {getApiBaseUrl()} {" | "} Provider availability uses {watchRegionLabel}.
+          </p>
         </section>
 
         <section className="recommendation-panel">
@@ -469,20 +522,10 @@ function App() {
               />
             </label>
 
-            <label className="field">
-              <span>Country code</span>
-              <input
-                type="text"
-                maxLength={2}
-                value={recommendationForm.countryCode}
-                onChange={(event) =>
-                  setRecommendationForm((current) => ({
-                    ...current,
-                    countryCode: event.target.value.replace(/[^a-z]/gi, "").toUpperCase()
-                  }))
-                }
-              />
-            </label>
+            <div className="field">
+              <span>Watch region</span>
+              <p className="field-note">{watchRegionLabel} from the main toolbar.</p>
+            </div>
 
             <label className="field field-wide">
               <span>Optional hint</span>
@@ -574,6 +617,7 @@ function App() {
             isSimilarLoading={detailsState.isSimilarLoading}
             error={detailsState.error}
             similarError={detailsState.similarError}
+            watchRegionLabel={watchRegionLabel}
             onClose={clearSelectedMovie}
             onSelectMovie={handleSelectMovie}
           />
@@ -648,6 +692,11 @@ function formatMoodLabel(mood: Mood): string {
     default:
       return mood;
   }
+}
+
+function getWatchRegionLabel(countryCode: string): string {
+  const region = WATCH_REGIONS.find((item) => item.code === countryCode);
+  return region ? `${region.label} (${region.code})` : countryCode;
 }
 
 function toMovieCard(recommendation: Recommendation): MovieCard {

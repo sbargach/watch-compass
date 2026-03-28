@@ -106,6 +106,13 @@ body {
   animation: slide-up 520ms ease-out both;
 }
 
+.search-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(12rem, 15rem);
+  gap: 0.9rem;
+  align-items: end;
+}
+
 .recommendation-panel {
   position: relative;
   margin-top: 1.3rem;
@@ -157,6 +164,10 @@ body {
   gap: 0.75rem;
 }
 
+.search-region-field {
+  min-width: 0;
+}
+
 .recommendation-form {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -173,6 +184,17 @@ body {
   font-size: 0.88rem;
   font-weight: 600;
   color: var(--muted);
+}
+
+.field-note {
+  margin: 0;
+  min-height: 3rem;
+  border: 1px solid #c6d2ca;
+  border-radius: 0.8rem;
+  padding: 0.75rem 0.9rem;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.75);
+  line-height: 1.35;
 }
 
 .field input,
@@ -618,7 +640,9 @@ body {
 .details-close:focus-visible,
 .pagination button:focus-visible,
 .search-form button:focus-visible,
-.search-form input:focus-visible {
+.search-form input:focus-visible,
+.field select:focus-visible,
+.field input:focus-visible {
   outline: 2px solid rgba(15, 118, 110, 0.35);
   outline-offset: 2px;
 }
@@ -725,6 +749,10 @@ body {
   .app-content {
     width: min(100%, calc(100% - 1.25rem));
     padding-top: 1.3rem;
+  }
+
+  .search-toolbar {
+    grid-template-columns: 1fr;
   }
 
   .search-form {

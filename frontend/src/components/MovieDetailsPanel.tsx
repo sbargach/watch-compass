@@ -10,6 +10,7 @@ type MovieDetailsPanelProps = {
   isSimilarLoading: boolean;
   error: string | null;
   similarError: string | null;
+  watchRegionLabel: string;
   onClose: () => void;
   onSelectMovie: (movie: MovieCard) => void;
 };
@@ -22,6 +23,7 @@ export function MovieDetailsPanel({
   isSimilarLoading,
   error,
   similarError,
+  watchRegionLabel,
   onClose,
   onSelectMovie
 }: MovieDetailsPanelProps) {
@@ -64,12 +66,16 @@ export function MovieDetailsPanel({
               </div>
             )}
 
-            {isLoading && <p className="status-text">Loading movie details...</p>}
+            {isLoading && (
+              <p className="status-text">
+                {details ? `Refreshing availability for ${watchRegionLabel}...` : "Loading movie details..."}
+              </p>
+            )}
             {error && <p className="status-text status-error">{error}</p>}
 
             {!isLoading && !error && (
               <div className="providers-block">
-                <p className="providers-label">Where to watch</p>
+                <p className="providers-label">Where to watch in {watchRegionLabel}</p>
                 {hasProviders ? (
                   <div className="chip-list" aria-label="Providers">
                     {details.providers.map((provider) => (

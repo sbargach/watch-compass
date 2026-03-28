@@ -99,6 +99,7 @@ public sealed class GetRecommendationsUseCase
                 movie.MovieId,
                 title,
                 runtimeValue,
+                normalizedGenres,
                 reasons,
                 Array.Empty<string>(),
                 posterUrl,

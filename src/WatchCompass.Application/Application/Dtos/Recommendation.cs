@@ -4,6 +4,7 @@ public sealed record Recommendation(
     int MovieId,
     string Title,
     int RuntimeMinutes,
+    IReadOnlyList<string> Genres,
     IReadOnlyList<string> Reasons,
     IReadOnlyList<string> Providers,
     string? PosterUrl = null,

@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.15.0] - 2026-03-28
+### Added
+- Shared watch-region control in the frontend so provider availability and recommendation requests use one consistent country context.
+- Recommendation responses now include genres, keeping recommendation cards and the details panel aligned on the same movie shape.
+
+### Fixed
+- Changing the watch region while a movie is open now refreshes provider availability without reloading similar titles.
+- Opening a recommendation in the details panel no longer relies on missing genre data from the backend contract.
+
+### Changed
+- Bumped project package versions from `0.14.0` to `0.15.0` across Domain, Contracts, Application, Infrastructure, API, and frontend packages.
+
 ## [0.14.0] - 2026-03-22
 ### Added
 - Frontend recommendation builder with mood, time budget, optional hint, country code, and avoid-genre controls.

@@ -70,6 +70,7 @@ public class GetRecommendationsUseCaseTests
 
         recommendations.Count.ShouldBe(1);
         recommendations[0].MovieId.ShouldBe(2);
+        recommendations[0].Genres.ShouldBe(new[] { "Comedy" });
     }
 
     [Test]

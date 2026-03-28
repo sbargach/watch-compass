@@ -220,6 +220,9 @@ public class ApiIntegrationTests
         var providers = items[0].GetProperty("providers");
         providers.GetArrayLength().ShouldBeGreaterThan(0);
         providers[0].GetString().ShouldBe("Netflix");
+        var genres = items[0].GetProperty("genres");
+        genres.GetArrayLength().ShouldBe(1);
+        genres[0].GetString().ShouldBe("Drama");
         items[0].GetProperty("posterUrl").GetString().ShouldBe("https://image.tmdb.org/t/p/w500/poster-999.jpg");
         items[0].GetProperty("backdropUrl").GetString().ShouldBe("https://image.tmdb.org/t/p/w780/backdrop-999.jpg");
         items[0].GetProperty("releaseYear").GetInt32().ShouldBe(2019);

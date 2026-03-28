@@ -21,6 +21,11 @@ public sealed record RecommendationDto
     public int RuntimeMinutes { get; init; }
 
     /// <summary>
+    /// Genres associated with the movie.
+    /// </summary>
+    public IReadOnlyList<string> Genres { get; init; } = Array.Empty<string>();
+
+    /// <summary>
     /// Human-readable reasons why the title was chosen.
     /// </summary>
     public IReadOnlyList<string> Reasons { get; init; } = Array.Empty<string>();
