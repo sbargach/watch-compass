@@ -51,6 +51,25 @@ public sealed class CachedMovieCatalog : IMovieCatalog
         return CacheOrReturn(key, results, _options.SearchDuration);
     }
 
+    public async Task<PagedResult<MovieCard>> DiscoverByGenreAsync(string genre, int page, int pageSize, CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        if (string.IsNullOrWhiteSpace(genre))
+        {
+            return new PagedResult<MovieCard>(Array.Empty<MovieCard>(), page, pageSize, 0, 0, false);
+        }
+
+        var normalizedGenre = genre.Trim().ToLowerInvariant();
+        var key = $"discover:{normalizedGenre}:{page}:{pageSize}";
+        if (_cache.TryGetValue(key, out PagedResult<MovieCard>? cachedResults) && cachedResults is not null)
+        {
+            return cachedResults;
+        }
+
+        var results = await _inner.DiscoverByGenreAsync(genre, page, pageSize, cancellationToken);
+        return CacheOrReturn(key, results, _options.DiscoverDuration);
+    }
+
     public async Task<MovieDetails?> GetDetailsAsync(int movieId, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();

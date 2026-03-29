@@ -144,6 +144,20 @@ public class GetRecommendationsUseCaseTests
             return Task.FromResult(new PagedResult<MovieCard>(items, page, pageSize, SearchResults.Count, totalPages, page < totalPages));
         }
 
+        public Task<PagedResult<MovieCard>> DiscoverByGenreAsync(string genre, int page, int pageSize, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            _ = genre;
+            var items = SearchResults
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+            var totalPages = SearchResults.Count == 0
+                ? 0
+                : (int)Math.Ceiling(SearchResults.Count / (double)pageSize);
+            return Task.FromResult(new PagedResult<MovieCard>(items, page, pageSize, SearchResults.Count, totalPages, page < totalPages));
+        }
+
         public Task<MovieDetails?> GetDetailsAsync(int movieId, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();

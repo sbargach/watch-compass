@@ -37,6 +37,28 @@ const recommendedMovie = {
   providers: ["Prime Video"]
 };
 
+const discoverMoviePageOne = {
+  movieId: 3,
+  title: "Hot Fuzz",
+  runtimeMinutes: 121,
+  genres: ["Comedy", "Action"],
+  posterUrl: "https://image.tmdb.org/t/p/w500/hot-fuzz.jpg",
+  backdropUrl: "https://image.tmdb.org/t/p/original/hot-fuzz-backdrop.jpg",
+  releaseYear: 2007,
+  overview: "A decorated cop gets reassigned to a sleepy village."
+};
+
+const discoverMoviePageTwo = {
+  movieId: 4,
+  title: "Palm Springs",
+  runtimeMinutes: 90,
+  genres: ["Comedy", "Romance"],
+  posterUrl: "https://image.tmdb.org/t/p/w500/palm-springs.jpg",
+  backdropUrl: "https://image.tmdb.org/t/p/original/palm-springs-backdrop.jpg",
+  releaseYear: 2020,
+  overview: "Two wedding guests get stuck in a time loop."
+};
+
 const fetchMock = vi.fn<typeof fetch>();
 
 describe("App", () => {
@@ -169,19 +191,75 @@ describe("App", () => {
 
     render(<App />);
 
-    await screen.findByRole("button", { name: "Horror" });
+    await screen.findByRole("button", { name: "Avoid genre Horror" });
 
     await userEvent.selectOptions(screen.getByLabelText("Watch region"), "US");
     await userEvent.clear(screen.getByLabelText("Time budget (minutes)"));
     await userEvent.type(screen.getByLabelText("Time budget (minutes)"), "95");
     await userEvent.type(screen.getByLabelText("Optional hint"), "time loop");
-    await userEvent.click(screen.getByRole("button", { name: "Horror" }));
+    await userEvent.click(screen.getByRole("button", { name: "Avoid genre Horror" }));
     await userEvent.click(screen.getByRole("button", { name: "Get recommendations" }));
 
     await screen.findByRole("heading", { name: "Recommendation Results" });
     expect(screen.getByText("Palm Springs")).toBeInTheDocument();
     expect(screen.getByText("Matches the feel-good mood.")).toBeInTheDocument();
     expect(screen.getByText("Prime Video")).toBeInTheDocument();
+  });
+
+  it("loads genre discovery results and paginates them", async () => {
+    fetchMock.mockImplementation(async (input) => {
+      const url = String(input);
+
+      if (url.endsWith("/api/movies/trending?limit=12")) {
+        return createJsonResponse({ items: [trendingMovie] });
+      }
+
+      if (url.endsWith("/api/genres")) {
+        return createJsonResponse({ items: ["Comedy", "Horror", "Drama"] });
+      }
+
+      if (url.endsWith("/api/movies/discover?genre=Comedy&page=1&pageSize=12")) {
+        return createJsonResponse({
+          items: [discoverMoviePageOne],
+          page: 1,
+          pageSize: 12,
+          totalResults: 13,
+          totalPages: 2,
+          hasNextPage: true
+        });
+      }
+
+      if (url.endsWith("/api/movies/discover?genre=Comedy&page=2&pageSize=12")) {
+        return createJsonResponse({
+          items: [discoverMoviePageTwo],
+          page: 2,
+          pageSize: 12,
+          totalResults: 13,
+          totalPages: 2,
+          hasNextPage: false
+        });
+      }
+
+      throw new Error(`Unexpected fetch call: ${url}`);
+    });
+
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<App />);
+
+    await userEvent.click(await screen.findByRole("button", { name: "Browse genre Comedy" }));
+
+    await screen.findByRole("heading", { name: "Comedy Picks" });
+    expect(screen.getByText("Hot Fuzz")).toBeInTheDocument();
+    expect(screen.getByText("13 results. Select a card for details and similar titles.")).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "Next" }));
+
+    await screen.findByText("Palm Springs");
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledTimes(4);
+    });
   });
 });
 

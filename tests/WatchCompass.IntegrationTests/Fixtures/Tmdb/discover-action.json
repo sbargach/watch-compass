@@ -1,0 +1,27 @@
+{
+  "page": 1,
+  "results": [
+    {
+      "id": 401,
+      "title": "Action Select",
+      "runtime": 118,
+      "genre_ids": [28, 35],
+      "poster_path": "/poster-401.jpg",
+      "backdrop_path": "/backdrop-401.jpg",
+      "release_date": "2024-03-15",
+      "overview": "A big-screen action crowd pleaser."
+    },
+    {
+      "id": 402,
+      "title": "Action Runner",
+      "runtime": 102,
+      "genre_ids": [28],
+      "poster_path": "/poster-402.jpg",
+      "backdrop_path": "/backdrop-402.jpg",
+      "release_date": "2022-09-08",
+      "overview": "A fast chase thriller."
+    }
+  ],
+  "total_pages": 2,
+  "total_results": 22
+}

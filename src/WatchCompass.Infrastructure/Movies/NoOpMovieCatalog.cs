@@ -19,6 +19,13 @@ public sealed class NoOpMovieCatalog : IMovieCatalog
         return Task.FromResult(new PagedResult<MovieCard>(Array.Empty<MovieCard>(), page, pageSize, 0, 0, false));
     }
 
+    public Task<PagedResult<MovieCard>> DiscoverByGenreAsync(string genre, int page, int pageSize, CancellationToken cancellationToken = default)
+    {
+        _ = genre;
+        cancellationToken.ThrowIfCancellationRequested();
+        return Task.FromResult(new PagedResult<MovieCard>(Array.Empty<MovieCard>(), page, pageSize, 0, 0, false));
+    }
+
     public Task<MovieDetails?> GetDetailsAsync(int movieId, CancellationToken cancellationToken = default)
     {
         _ = movieId;

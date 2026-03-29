@@ -29,6 +29,20 @@ export async function searchMovies(
   return requestJson<SearchMoviesResponse>(`/api/movies/search?${params.toString()}`);
 }
 
+export async function discoverMovies(
+  genre: string,
+  page: number,
+  pageSize: number
+): Promise<SearchMoviesResponse> {
+  const params = new URLSearchParams({
+    genre,
+    page: String(page),
+    pageSize: String(pageSize)
+  });
+
+  return requestJson<SearchMoviesResponse>(`/api/movies/discover?${params.toString()}`);
+}
+
 export async function getMovieDetails(
   movieId: number,
   countryCode?: string

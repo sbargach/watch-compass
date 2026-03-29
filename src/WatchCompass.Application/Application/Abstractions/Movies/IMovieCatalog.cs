@@ -8,6 +8,8 @@ public interface IMovieCatalog
 
     Task<PagedResult<MovieCard>> SearchPageAsync(string query, int page, int pageSize, CancellationToken cancellationToken = default);
 
+    Task<PagedResult<MovieCard>> DiscoverByGenreAsync(string genre, int page, int pageSize, CancellationToken cancellationToken = default);
+
     Task<MovieDetails?> GetDetailsAsync(int movieId, CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<string>> GetWatchProvidersAsync(int movieId, string countryCode, CancellationToken cancellationToken = default);

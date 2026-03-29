@@ -37,6 +37,18 @@ public class CachedMovieCatalogTests
     }
 
     [Test]
+    public async Task DiscoverByGenreAsync_CachesByNormalizedGenre()
+    {
+        var inner = new CountingMovieCatalog();
+        var catalog = CreateCatalog(inner);
+
+        await catalog.DiscoverByGenreAsync(" Action ", 1, 12);
+        await catalog.DiscoverByGenreAsync("action", 1, 12);
+
+        inner.DiscoverCalls.ShouldBe(1);
+    }
+
+    [Test]
     public async Task GetSimilarAsync_CachesByMovie()
     {
         var inner = new CountingMovieCatalog();
@@ -78,6 +90,7 @@ public class CachedMovieCatalogTests
     private sealed class CountingMovieCatalog : IMovieCatalog
     {
         public int SearchPageCalls { get; private set; }
+        public int DiscoverCalls { get; private set; }
         public int ProviderCalls { get; private set; }
         public int SimilarCalls { get; private set; }
         public int TrendingCalls { get; private set; }
@@ -91,6 +104,13 @@ public class CachedMovieCatalogTests
         {
             SearchPageCalls++;
             var items = new[] { new MovieCard(1, query.Trim(), 100, Array.Empty<string>()) }.Take(pageSize).ToList();
+            return Task.FromResult(new PagedResult<MovieCard>(items, page, pageSize, 1, 1, false));
+        }
+
+        public Task<PagedResult<MovieCard>> DiscoverByGenreAsync(string genre, int page, int pageSize, CancellationToken cancellationToken = default)
+        {
+            DiscoverCalls++;
+            var items = new[] { new MovieCard(1, genre.Trim(), 100, Array.Empty<string>()) }.Take(pageSize).ToList();
             return Task.FromResult(new PagedResult<MovieCard>(items, page, pageSize, 1, 1, false));
         }
 

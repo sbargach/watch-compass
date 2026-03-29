@@ -1,4 +1,5 @@
 type PaginationProps = {
+  label?: string;
   page: number;
   totalPages: number;
   totalResults: number;
@@ -9,6 +10,7 @@ type PaginationProps = {
 };
 
 export function Pagination({
+  label = "Results pagination",
   page,
   totalPages,
   totalResults,
@@ -22,7 +24,7 @@ export function Pagination({
   }
 
   return (
-    <nav className="pagination" aria-label="Search pagination">
+    <nav className="pagination" aria-label={label}>
       <button type="button" onClick={onPrevious} disabled={disabled || page <= 1}>
         Previous
       </button>

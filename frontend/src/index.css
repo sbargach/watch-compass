@@ -136,6 +136,56 @@ body {
   background: linear-gradient(90deg, #0f766e, #f59e0b);
 }
 
+.genre-explorer {
+  margin-top: 1.3rem;
+  background:
+    linear-gradient(180deg, rgba(251, 228, 191, 0.45), rgba(255, 255, 255, 0) 8rem),
+    var(--surface-soft);
+  border: 1px solid var(--surface-border);
+  border-radius: 1.25rem;
+  padding: 1.25rem;
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(8px);
+  animation: slide-up 560ms ease-out both;
+}
+
+.genre-explorer-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(18rem, 24rem);
+  gap: 1rem;
+  align-items: end;
+}
+
+.genre-explorer-copy {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.genre-explorer-header h2 {
+  margin: 0;
+  font-family: "Space Grotesk", sans-serif;
+}
+
+.genre-explorer-actions {
+  margin-top: 1rem;
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.genre-results {
+  margin-top: 1.35rem;
+}
+
+.genre-results-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 1rem;
+}
+
 .recommendation-panel-header {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(18rem, 24rem);
@@ -244,6 +294,16 @@ body {
   color: var(--accent-strong);
 }
 
+.secondary-button {
+  border: 1px solid #c6d2ca;
+  border-radius: 0.8rem;
+  background: #fff;
+  color: var(--text);
+  padding: 0.7rem 0.95rem;
+  font: inherit;
+  cursor: pointer;
+}
+
 .recommendation-actions {
   grid-column: 1 / -1;
   display: flex;
@@ -262,7 +322,8 @@ body {
 }
 
 .recommendation-actions button:disabled,
-.genre-chip:disabled {
+.genre-chip:disabled,
+.secondary-button:disabled {
   cursor: not-allowed;
   opacity: 0.65;
 }
@@ -637,6 +698,7 @@ body {
 }
 
 .movie-tile-selectable:focus-within,
+.secondary-button:focus-visible,
 .details-close:focus-visible,
 .pagination button:focus-visible,
 .search-form button:focus-visible,
@@ -763,10 +825,24 @@ body {
     padding: 1rem;
   }
 
+  .genre-explorer {
+    padding: 1rem;
+  }
+
+  .genre-explorer-header,
   .recommendation-panel-header,
   .recommendation-results-heading {
     grid-template-columns: 1fr;
     display: grid;
+  }
+
+  .genre-results-heading {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .genre-explorer-actions {
+    flex-direction: column;
   }
 
   .recommendation-form {

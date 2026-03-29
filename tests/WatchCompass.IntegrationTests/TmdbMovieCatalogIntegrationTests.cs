@@ -84,6 +84,27 @@ public class TmdbMovieCatalogIntegrationTests
     }
 
     [Test]
+    public async Task DiscoverByGenreAsync_ReturnsRequestedSliceAndMetadata()
+    {
+        StubGenres("genres.json");
+        StubDiscover(28, "discover-action.json");
+
+        using var httpClient = CreateHttpClient();
+        var catalog = CreateCatalog(httpClient);
+
+        var result = await catalog.DiscoverByGenreAsync("Action", page: 2, pageSize: 1);
+
+        result.Items.Count.ShouldBe(1);
+        result.Items[0].MovieId.ShouldBe(402);
+        result.Items[0].Title.ShouldBe("Action Runner");
+        result.Page.ShouldBe(2);
+        result.PageSize.ShouldBe(1);
+        result.TotalResults.ShouldBe(22);
+        result.TotalPages.ShouldBe(22);
+        result.HasNextPage.ShouldBeTrue();
+    }
+
+    [Test]
     public async Task GetDetailsAsync_ReturnsGenresAndRuntime()
     {
         StubDetails(100, "details.json");
@@ -196,6 +217,23 @@ public class TmdbMovieCatalogIntegrationTests
         _server.Given(Request.Create()
                 .WithPath("/3/genre/movie/list")
                 .WithParam("language", _options.Language)
+                .UsingGet())
+            .RespondWith(Response.Create()
+                .WithStatusCode((int)HttpStatusCode.OK)
+                .WithHeader("Content-Type", "application/json")
+                .WithBodyFromFile(GetFixturePath(fixtureName)));
+    }
+
+    private void StubDiscover(int genreId, string fixtureName, int tmdbPage = 1)
+    {
+        _server.Given(Request.Create()
+                .WithPath("/3/discover/movie")
+                .WithParam("with_genres", genreId.ToString())
+                .WithParam("page", tmdbPage.ToString())
+                .WithParam("language", _options.Language)
+                .WithParam("include_adult", "false")
+                .WithParam("sort_by", "popularity.desc")
+                .WithParam("region", _options.DefaultCountryCode)
                 .UsingGet())
             .RespondWith(Response.Create()
                 .WithStatusCode((int)HttpStatusCode.OK)

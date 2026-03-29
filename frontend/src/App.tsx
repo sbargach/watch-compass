@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import {
+  discoverMovies,
   getApiBaseUrl,
   getGenres,
   getMovieDetails,
@@ -21,7 +22,7 @@ import type {
   SearchMoviesResponse
 } from "./types/movies";
 
-const SEARCH_PAGE_SIZE = 12;
+const RESULTS_PAGE_SIZE = 12;
 const TRENDING_LIMIT = 12;
 const MOODS: readonly Mood[] = ["FeelGood", "Chill", "Intense", "Scary"];
 const DEFAULT_WATCH_REGION = "NL";
@@ -118,6 +119,13 @@ function App() {
     error: null
   });
   const [searchState, setSearchState] = useState<SearchState>({
+    result: null,
+    isLoading: false,
+    error: null
+  });
+  const [discoverGenre, setDiscoverGenre] = useState<string | null>(null);
+  const [discoverPage, setDiscoverPage] = useState(1);
+  const [discoverState, setDiscoverState] = useState<SearchState>({
     result: null,
     isLoading: false,
     error: null
@@ -221,7 +229,7 @@ function App() {
       });
 
       try {
-        const response = await searchMovies(activeQuery, searchPage, SEARCH_PAGE_SIZE);
+        const response = await searchMovies(activeQuery, searchPage, RESULTS_PAGE_SIZE);
         if (!isActive) {
           return;
         }
@@ -250,6 +258,51 @@ function App() {
       isActive = false;
     };
   }, [activeQuery, searchPage, searchNonce]);
+
+  useEffect(() => {
+    if (discoverGenre === null) {
+      return;
+    }
+
+    let isActive = true;
+
+    const loadDiscoverResults = async () => {
+      setDiscoverState({
+        result: null,
+        isLoading: true,
+        error: null
+      });
+
+      try {
+        const response = await discoverMovies(discoverGenre, discoverPage, RESULTS_PAGE_SIZE);
+        if (!isActive) {
+          return;
+        }
+
+        setDiscoverState({
+          result: response,
+          isLoading: false,
+          error: null
+        });
+      } catch (error) {
+        if (!isActive) {
+          return;
+        }
+
+        setDiscoverState({
+          result: null,
+          isLoading: false,
+          error: toErrorMessage(error)
+        });
+      }
+    };
+
+    void loadDiscoverResults();
+
+    return () => {
+      isActive = false;
+    };
+  }, [discoverGenre, discoverPage]);
 
   const selectedMovieId = selectedMovie?.movieId ?? null;
   const watchRegionLabel = getWatchRegionLabel(watchRegion);
@@ -346,6 +399,28 @@ function App() {
     setDetailsState(createEmptyDetailsState());
   };
 
+  const clearDiscoverSelection = () => {
+    setDiscoverGenre(null);
+    setDiscoverPage(1);
+    setDiscoverState({
+      result: null,
+      isLoading: false,
+      error: null
+    });
+  };
+
+  const handleSelectDiscoverGenre = (genre: string) => {
+    clearSelectedMovie();
+
+    if (discoverGenre === genre) {
+      clearDiscoverSelection();
+      return;
+    }
+
+    setDiscoverGenre(genre);
+    setDiscoverPage(1);
+  };
+
   const handleSelectMovie = (movie: MovieCard) => {
     if (selectedMovie?.movieId === movie.movieId) {
       return;
@@ -427,6 +502,7 @@ function App() {
 
   const hasSearch = activeQuery.length > 0;
   const hasSearchResults = (searchState.result?.items.length ?? 0) > 0;
+  const hasDiscoverResults = (discoverState.result?.items.length ?? 0) > 0;
   const hasRecommendations = recommendationState.items.length > 0;
 
   return (
@@ -559,6 +635,7 @@ function App() {
                         key={genre}
                         type="button"
                         className={`genre-chip${isSelected ? " genre-chip-selected" : ""}`}
+                        aria-label={`Avoid genre ${genre}`}
                         onClick={() =>
                           setRecommendationForm((current) => ({
                             ...current,
@@ -624,6 +701,92 @@ function App() {
         )}
 
         {!hasSearch && (
+          <section className="genre-explorer">
+            <div className="genre-explorer-header">
+              <div>
+                <p className="panel-kicker">Browse Mode</p>
+                <h2>Genre Explorer</h2>
+              </div>
+              <p className="genre-explorer-copy">
+                Pick a genre to browse a popularity-sorted catalog slice from the backend. Results reuse the shared
+                details panel and pagination flow.
+              </p>
+            </div>
+
+            {genresState.isLoading && <p className="status-text">Loading genres...</p>}
+            {genresState.error && <p className="status-text status-error">{genresState.error}</p>}
+            {!genresState.isLoading && !genresState.error && genresState.items.length === 0 && (
+              <p className="status-text">No genres were returned.</p>
+            )}
+
+            {genresState.items.length > 0 && (
+              <div className="genre-explorer-actions">
+                <div className="genre-chip-list">
+                  {genresState.items.map((genre) => {
+                    const isSelected = discoverGenre === genre;
+
+                    return (
+                      <button
+                        key={genre}
+                        type="button"
+                        className={`genre-chip${isSelected ? " genre-chip-selected" : ""}`}
+                        aria-label={`Browse genre ${genre}`}
+                        onClick={() => handleSelectDiscoverGenre(genre)}
+                        aria-pressed={isSelected}
+                      >
+                        {genre}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {discoverGenre && (
+                  <button type="button" className="secondary-button" onClick={clearDiscoverSelection}>
+                    Clear genre
+                  </button>
+                )}
+              </div>
+            )}
+
+            {!discoverGenre && !genresState.isLoading && !genresState.error && genresState.items.length > 0 && (
+              <p className="status-text">Select a genre to load a dedicated discovery page.</p>
+            )}
+            {discoverState.error && <p className="status-text status-error">{discoverState.error}</p>}
+            {discoverState.isLoading && discoverGenre && <p className="status-text">Loading {discoverGenre} picks...</p>}
+            {discoverGenre && !discoverState.isLoading && !discoverState.error && !hasDiscoverResults && (
+              <p className="status-text">No movies were returned for this genre.</p>
+            )}
+
+            {hasDiscoverResults && (
+              <div className="genre-results">
+                <div className="section-heading genre-results-heading">
+                  <h2>{discoverGenre} Picks</h2>
+                  <p>
+                    {discoverState.result?.totalResults ?? 0} results. Select a card for details and similar titles.
+                  </p>
+                </div>
+
+                <MovieGrid
+                  movies={discoverState.result?.items ?? []}
+                  onSelectMovie={handleSelectMovie}
+                  selectedMovieId={selectedMovie?.movieId}
+                />
+                <Pagination
+                  label="Genre pagination"
+                  page={discoverState.result?.page ?? 1}
+                  totalPages={discoverState.result?.totalPages ?? 1}
+                  totalResults={discoverState.result?.totalResults ?? 0}
+                  hasNextPage={discoverState.result?.hasNextPage ?? false}
+                  disabled={discoverState.isLoading}
+                  onPrevious={() => setDiscoverPage((current) => Math.max(1, current - 1))}
+                  onNext={() => setDiscoverPage((current) => current + 1)}
+                />
+              </div>
+            )}
+          </section>
+        )}
+
+        {!hasSearch && (
           <section className="content-section">
             <div className="section-heading">
               <h2>Trending Today</h2>
@@ -668,6 +831,7 @@ function App() {
                   selectedMovieId={selectedMovie?.movieId}
                 />
                 <Pagination
+                  label="Search pagination"
                   page={searchState.result?.page ?? 1}
                   totalPages={searchState.result?.totalPages ?? 1}
                   totalResults={searchState.result?.totalResults ?? 0}

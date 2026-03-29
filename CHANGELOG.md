@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.16.0] - 2026-03-29
+### Added
+- Genre discovery endpoint on `GET /api/movies/discover`, including paged TMDB-backed results and cache coverage.
+- Frontend genre explorer section so visitors can browse curated genre slices and open the shared movie details flow from those results.
+- Backend and frontend regression coverage for the new genre discovery path.
+
+### Changed
+- Reused the paged movie response flow for search and genre browsing to keep pagination behavior consistent across the app.
+- Bumped project package versions from `0.15.0` to `0.16.0` across Domain, Contracts, Application, Infrastructure, API, and frontend packages.
+
 ## [0.15.0] - 2026-03-28
 ### Added
 - Shared watch-region control in the frontend so provider availability and recommendation requests use one consistent country context.

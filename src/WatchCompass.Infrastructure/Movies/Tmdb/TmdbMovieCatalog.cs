@@ -17,6 +17,7 @@ public sealed class TmdbMovieCatalog : IMovieCatalog
     private static readonly Meter Meter = new("watch-compass.tmdb");
     private static readonly Counter<long> CallsCounter = Meter.CreateCounter<long>("tmdb.calls.count");
     private static readonly KeyValuePair<string, object?> SearchTag = new("operation", "search");
+    private static readonly KeyValuePair<string, object?> DiscoverTag = new("operation", "discover");
     private static readonly KeyValuePair<string, object?> DetailsTag = new("operation", "details");
     private static readonly KeyValuePair<string, object?> ProvidersTag = new("operation", "providers");
     private static readonly KeyValuePair<string, object?> SimilarTag = new("operation", "similar");
@@ -63,54 +64,65 @@ public sealed class TmdbMovieCatalog : IMovieCatalog
         EnsureApiKey();
 
         var trimmedQuery = query.Trim();
-        CallsCounter.Add(1, SearchTag);
         try
         {
-            var startIndex = (page - 1) * pageSize;
-            var startTmdbPage = (startIndex / TmdbSearchPageSize) + 1;
-            var endTmdbPage = ((startIndex + pageSize - 1) / TmdbSearchPageSize) + 1;
-
-            var aggregated = new List<TmdbMovieSearchResult>(Math.Max(pageSize, TmdbSearchPageSize));
-            var totalResults = 0;
-            for (var tmdbPage = startTmdbPage; tmdbPage <= endTmdbPage; tmdbPage++)
-            {
-                var response = await _apiClient.SearchMoviesAsync(trimmedQuery, tmdbPage, cancellationToken);
-                totalResults = Math.Max(0, response.TotalResults);
-
-                if (response.Results.Count == 0)
-                {
-                    break;
-                }
-
-                aggregated.AddRange(response.Results);
-                if (tmdbPage >= response.TotalPages)
-                {
-                    break;
-                }
-            }
-
-            var genreLookup = aggregated.Any(result => result.GenreIds.Count > 0)
-                ? await GetGenreLookupAsync(cancellationToken)
-                : _genreLookup;
-
-            var skipWithinAggregate = startIndex % TmdbSearchPageSize;
-            var items = aggregated
-                .Skip(skipWithinAggregate)
-                .Take(pageSize)
-                .Where(result => result.Id > 0 && !string.IsNullOrWhiteSpace(result.Title))
-                .Select(result => MapSearchResult(result, genreLookup))
-                .ToList();
-
-            var totalPages = totalResults == 0
-                ? 0
-                : (int)Math.Ceiling(totalResults / (double)pageSize);
-            var hasNextPage = page < totalPages;
-
-            return new PagedResult<MovieCard>(items, page, pageSize, totalResults, totalPages, hasNextPage);
+            return await FetchPagedResultsAsync(
+                page,
+                pageSize,
+                (tmdbPage, token) => _apiClient.SearchMoviesAsync(trimmedQuery, tmdbPage, token),
+                SearchTag,
+                cancellationToken);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
             _logger.LogWarning(ex, "TMDB search failed for query {Query}", trimmedQuery);
+            throw;
+        }
+    }
+
+    public async Task<PagedResult<MovieCard>> DiscoverByGenreAsync(string genre, int page, int pageSize, CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        if (string.IsNullOrWhiteSpace(genre))
+        {
+            return new PagedResult<MovieCard>(Array.Empty<MovieCard>(), page, pageSize, 0, 0, false);
+        }
+
+        if (page <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(page), "Page must be positive.");
+        }
+
+        if (pageSize <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(pageSize), "Page size must be positive.");
+        }
+
+        EnsureApiKey();
+
+        var trimmedGenre = genre.Trim();
+        var genreLookup = await GetGenreLookupAsync(cancellationToken);
+        var genreEntry = genreLookup.FirstOrDefault(entry =>
+            entry.Key > 0 &&
+            string.Equals(entry.Value, trimmedGenre, StringComparison.OrdinalIgnoreCase));
+
+        if (genreEntry.Key <= 0)
+        {
+            return new PagedResult<MovieCard>(Array.Empty<MovieCard>(), page, pageSize, 0, 0, false);
+        }
+
+        try
+        {
+            return await FetchPagedResultsAsync(
+                page,
+                pageSize,
+                (tmdbPage, token) => _apiClient.DiscoverMoviesByGenreAsync(genreEntry.Key, tmdbPage, token),
+                DiscoverTag,
+                cancellationToken);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            _logger.LogWarning(ex, "TMDB genre discovery failed for {Genre}", trimmedGenre);
             throw;
         }
     }
@@ -270,6 +282,58 @@ public sealed class TmdbMovieCatalog : IMovieCatalog
             _logger.LogWarning(ex, "TMDB watch providers failed for {MovieId}", movieId);
             throw;
         }
+    }
+
+    private async Task<PagedResult<MovieCard>> FetchPagedResultsAsync(
+        int page,
+        int pageSize,
+        Func<int, CancellationToken, Task<TmdbSearchResponse>> fetchPage,
+        KeyValuePair<string, object?> tag,
+        CancellationToken cancellationToken)
+    {
+        CallsCounter.Add(1, tag);
+
+        var startIndex = (page - 1) * pageSize;
+        var startTmdbPage = (startIndex / TmdbSearchPageSize) + 1;
+        var endTmdbPage = ((startIndex + pageSize - 1) / TmdbSearchPageSize) + 1;
+
+        var aggregated = new List<TmdbMovieSearchResult>(Math.Max(pageSize, TmdbSearchPageSize));
+        var totalResults = 0;
+        for (var tmdbPage = startTmdbPage; tmdbPage <= endTmdbPage; tmdbPage++)
+        {
+            var response = await fetchPage(tmdbPage, cancellationToken);
+            totalResults = Math.Max(0, response.TotalResults);
+
+            if (response.Results.Count == 0)
+            {
+                break;
+            }
+
+            aggregated.AddRange(response.Results);
+            if (tmdbPage >= response.TotalPages)
+            {
+                break;
+            }
+        }
+
+        var genreLookup = aggregated.Any(result => result.GenreIds.Count > 0)
+            ? await GetGenreLookupAsync(cancellationToken)
+            : _genreLookup;
+
+        var skipWithinAggregate = startIndex % TmdbSearchPageSize;
+        var items = aggregated
+            .Skip(skipWithinAggregate)
+            .Take(pageSize)
+            .Where(result => result.Id > 0 && !string.IsNullOrWhiteSpace(result.Title))
+            .Select(result => MapSearchResult(result, genreLookup))
+            .ToList();
+
+        var totalPages = totalResults == 0
+            ? 0
+            : (int)Math.Ceiling(totalResults / (double)pageSize);
+        var hasNextPage = page < totalPages;
+
+        return new PagedResult<MovieCard>(items, page, pageSize, totalResults, totalPages, hasNextPage);
     }
 
     private void EnsureApiKey()

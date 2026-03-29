@@ -115,6 +115,28 @@ public class ApiIntegrationTests
     }
 
     [Test]
+    public async Task DiscoverEndpoint_ReturnsRequestedSlice()
+    {
+        StubGenres(LoadFixture("genres.json"));
+        StubDiscover(28, LoadFixture("discover-action.json"));
+
+        var response = await _client.GetAsync("/api/movies/discover?genre=Action&page=2&pageSize=1");
+
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var items = document.RootElement.GetProperty("items");
+        items.GetArrayLength().ShouldBe(1);
+        items[0].GetProperty("movieId").GetInt32().ShouldBe(402);
+        items[0].GetProperty("title").GetString().ShouldBe("Action Runner");
+        items[0].GetProperty("releaseYear").GetInt32().ShouldBe(2022);
+        document.RootElement.GetProperty("page").GetInt32().ShouldBe(2);
+        document.RootElement.GetProperty("pageSize").GetInt32().ShouldBe(1);
+        document.RootElement.GetProperty("totalResults").GetInt32().ShouldBe(22);
+        document.RootElement.GetProperty("totalPages").GetInt32().ShouldBe(22);
+        document.RootElement.GetProperty("hasNextPage").GetBoolean().ShouldBeTrue();
+    }
+
+    [Test]
     public async Task GenresEndpoint_ReturnsSortedList()
     {
         StubGenres(LoadFixture("genres.json"));
@@ -409,6 +431,23 @@ public class ApiIntegrationTests
                 .UsingGet()
                 .WithPath("/3/genre/movie/list")
                 .WithParam("language", "en-US"))
+            .RespondWith(Response.Create()
+                .WithStatusCode((int)HttpStatusCode.OK)
+                .WithHeader("Content-Type", "application/json")
+                .WithBody(body));
+    }
+
+    private void StubDiscover(int genreId, string body, int tmdbPage = 1)
+    {
+        _server.Given(Request.Create()
+                .UsingGet()
+                .WithPath("/3/discover/movie")
+                .WithParam("with_genres", genreId.ToString())
+                .WithParam("page", tmdbPage.ToString())
+                .WithParam("language", "en-US")
+                .WithParam("include_adult", "false")
+                .WithParam("sort_by", "popularity.desc")
+                .WithParam("region", "US"))
             .RespondWith(Response.Create()
                 .WithStatusCode((int)HttpStatusCode.OK)
                 .WithHeader("Content-Type", "application/json")

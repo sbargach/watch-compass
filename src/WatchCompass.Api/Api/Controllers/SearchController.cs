@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using WatchCompass.Application.Dtos;
+using WatchCompass.Application.UseCases.DiscoverMovies;
 using WatchCompass.Application.UseCases.MovieDetails;
 using WatchCompass.Application.UseCases.SearchMovies;
 using WatchCompass.Application.UseCases.SimilarMovies;
@@ -17,17 +18,20 @@ public sealed class SearchController : ControllerBase
     private const int MaxSearchPageSize = 50;
 
     private readonly SearchMoviesUseCase _searchMoviesUseCase;
+    private readonly DiscoverMoviesByGenreUseCase _discoverMoviesByGenreUseCase;
     private readonly GetMovieDetailsUseCase _getMovieDetailsUseCase;
     private readonly GetSimilarMoviesUseCase _getSimilarMoviesUseCase;
     private readonly GetTrendingMoviesUseCase _getTrendingMoviesUseCase;
 
     public SearchController(
         SearchMoviesUseCase searchMoviesUseCase,
+        DiscoverMoviesByGenreUseCase discoverMoviesByGenreUseCase,
         GetMovieDetailsUseCase getMovieDetailsUseCase,
         GetSimilarMoviesUseCase getSimilarMoviesUseCase,
         GetTrendingMoviesUseCase getTrendingMoviesUseCase)
     {
         _searchMoviesUseCase = searchMoviesUseCase;
+        _discoverMoviesByGenreUseCase = discoverMoviesByGenreUseCase;
         _getMovieDetailsUseCase = getMovieDetailsUseCase;
         _getSimilarMoviesUseCase = getSimilarMoviesUseCase;
         _getTrendingMoviesUseCase = getTrendingMoviesUseCase;
@@ -70,20 +74,47 @@ public sealed class SearchController : ControllerBase
         }
 
         var results = await _searchMoviesUseCase.SearchAsync(query, effectivePage, effectivePageSize, cancellationToken);
-        var response = new SearchMoviesResponse
-        {
-            Items = results
-                .Items
-                .Select(ToMovieCardDto)
-                .ToList(),
-            Page = results.Page,
-            PageSize = results.PageSize,
-            TotalResults = results.TotalResults,
-            TotalPages = results.TotalPages,
-            HasNextPage = results.HasNextPage
-        };
+        return Ok(ToPagedResponse(results));
+    }
 
-        return Ok(response);
+    [HttpGet("discover")]
+    public async Task<ActionResult<SearchMoviesResponse>> Discover(
+        [FromQuery] string? genre,
+        [FromQuery] int? page,
+        [FromQuery] int? pageSize,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(genre))
+        {
+            return ToProblem(new ProblemDetails
+            {
+                Status = StatusCodes.Status400BadRequest,
+                Title = "Genre is required."
+            });
+        }
+
+        var effectivePage = page ?? DefaultSearchPage;
+        if (effectivePage <= 0)
+        {
+            return ToProblem(new ProblemDetails
+            {
+                Status = StatusCodes.Status400BadRequest,
+                Title = "Page must be greater than 0."
+            });
+        }
+
+        var effectivePageSize = pageSize ?? DefaultSearchPageSize;
+        if (effectivePageSize <= 0 || effectivePageSize > MaxSearchPageSize)
+        {
+            return ToProblem(new ProblemDetails
+            {
+                Status = StatusCodes.Status400BadRequest,
+                Title = $"PageSize must be between 1 and {MaxSearchPageSize}."
+            });
+        }
+
+        var results = await _discoverMoviesByGenreUseCase.GetAsync(genre, effectivePage, effectivePageSize, cancellationToken);
+        return Ok(ToPagedResponse(results));
     }
 
     [HttpGet("trending")]
@@ -186,6 +217,22 @@ public sealed class SearchController : ControllerBase
             BackdropUrl = movie.BackdropUrl,
             ReleaseYear = movie.ReleaseYear,
             Overview = movie.Overview
+        };
+    }
+
+    private static SearchMoviesResponse ToPagedResponse(PagedResult<MovieCard> results)
+    {
+        return new SearchMoviesResponse
+        {
+            Items = results
+                .Items
+                .Select(ToMovieCardDto)
+                .ToList(),
+            Page = results.Page,
+            PageSize = results.PageSize,
+            TotalResults = results.TotalResults,
+            TotalPages = results.TotalPages,
+            HasNextPage = results.HasNextPage
         };
     }
 

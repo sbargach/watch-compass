@@ -1,12 +1,12 @@
 namespace WatchCompass.Contracts;
 
 /// <summary>
-/// Response containing the movies matching a search query.
+/// Response containing a paged set of movie cards.
 /// </summary>
 public sealed record SearchMoviesResponse
 {
     /// <summary>
-    /// Search results ordered by relevance.
+    /// Movie results for the current query or browse request.
     /// </summary>
     public IReadOnlyList<MovieCardDto> Items { get; init; } = Array.Empty<MovieCardDto>();
 
