@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.17.0] - 2026-04-06
+### Added
+- Optional `releaseYear` filter on `GET /api/movies/search` and `GET /api/movies/discover`, including API validation, TMDB query forwarding, cache-key separation, and backend regression coverage.
+- Shared frontend release-year control in the search toolbar so title search and genre discovery can narrow results to a specific year.
+
+### Changed
+- Search and genre result summaries now surface the active year filter so the current browse state stays explicit in the UI.
+- Bumped project package versions from `0.16.0` to `0.17.0` across Domain, Contracts, Application, Infrastructure, API, and frontend packages.
+
 ## [0.16.0] - 2026-03-29
 ### Added
 - Genre discovery endpoint on `GET /api/movies/discover`, including paged TMDB-backed results and cache coverage.

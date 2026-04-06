@@ -6,9 +6,9 @@ namespace WatchCompass.Infrastructure.Movies.Tmdb;
 
 public interface ITmdbApiClient
 {
-    Task<TmdbSearchResponse> SearchMoviesAsync(string query, int page, CancellationToken cancellationToken = default);
+    Task<TmdbSearchResponse> SearchMoviesAsync(string query, int page, int? releaseYear = null, CancellationToken cancellationToken = default);
 
-    Task<TmdbSearchResponse> DiscoverMoviesByGenreAsync(int genreId, int page, CancellationToken cancellationToken = default);
+    Task<TmdbSearchResponse> DiscoverMoviesByGenreAsync(int genreId, int page, int? releaseYear = null, CancellationToken cancellationToken = default);
 
     Task<TmdbMovieDetailsResponse> GetMovieDetailsAsync(int movieId, CancellationToken cancellationToken = default);
 
@@ -34,7 +34,11 @@ public sealed class TmdbApiClient : ITmdbApiClient
         _options = options.Value;
     }
 
-    public Task<TmdbSearchResponse> SearchMoviesAsync(string query, int page, CancellationToken cancellationToken = default)
+    public Task<TmdbSearchResponse> SearchMoviesAsync(
+        string query,
+        int page,
+        int? releaseYear = null,
+        CancellationToken cancellationToken = default)
     {
         return _executor.SendAsync<TmdbSearchResponse>(() =>
         {
@@ -46,12 +50,17 @@ public sealed class TmdbApiClient : ITmdbApiClient
                     ["page"] = page.ToString(),
                     ["language"] = _options.Language,
                     ["include_adult"] = "false",
-                    ["region"] = NormalizeCountry(_options.DefaultCountryCode)
+                    ["region"] = NormalizeCountry(_options.DefaultCountryCode),
+                    ["primary_release_year"] = releaseYear?.ToString()
                 });
         }, cancellationToken);
     }
 
-    public Task<TmdbSearchResponse> DiscoverMoviesByGenreAsync(int genreId, int page, CancellationToken cancellationToken = default)
+    public Task<TmdbSearchResponse> DiscoverMoviesByGenreAsync(
+        int genreId,
+        int page,
+        int? releaseYear = null,
+        CancellationToken cancellationToken = default)
     {
         return _executor.SendAsync<TmdbSearchResponse>(() =>
         {
@@ -64,7 +73,8 @@ public sealed class TmdbApiClient : ITmdbApiClient
                     ["language"] = _options.Language,
                     ["include_adult"] = "false",
                     ["sort_by"] = "popularity.desc",
-                    ["region"] = NormalizeCountry(_options.DefaultCountryCode)
+                    ["region"] = NormalizeCountry(_options.DefaultCountryCode),
+                    ["primary_release_year"] = releaseYear?.ToString()
                 });
         }, cancellationToken);
     }

@@ -18,13 +18,17 @@ export async function getTrendingMovies(limit: number): Promise<TrendingMoviesRe
 export async function searchMovies(
   query: string,
   page: number,
-  pageSize: number
+  pageSize: number,
+  releaseYear?: number
 ): Promise<SearchMoviesResponse> {
   const params = new URLSearchParams({
     query,
     page: String(page),
     pageSize: String(pageSize)
   });
+  if (releaseYear !== undefined) {
+    params.set("releaseYear", String(releaseYear));
+  }
 
   return requestJson<SearchMoviesResponse>(`/api/movies/search?${params.toString()}`);
 }
@@ -32,13 +36,17 @@ export async function searchMovies(
 export async function discoverMovies(
   genre: string,
   page: number,
-  pageSize: number
+  pageSize: number,
+  releaseYear?: number
 ): Promise<SearchMoviesResponse> {
   const params = new URLSearchParams({
     genre,
     page: String(page),
     pageSize: String(pageSize)
   });
+  if (releaseYear !== undefined) {
+    params.set("releaseYear", String(releaseYear));
+  }
 
   return requestJson<SearchMoviesResponse>(`/api/movies/discover?${params.toString()}`);
 }

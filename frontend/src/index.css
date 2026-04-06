@@ -212,10 +212,15 @@ body {
 .search-form {
   display: flex;
   gap: 0.75rem;
+  align-items: end;
 }
 
 .search-region-field {
   min-width: 0;
+}
+
+.search-year-field {
+  flex: 0 0 9rem;
 }
 
 .recommendation-form {
@@ -339,7 +344,7 @@ body {
   gap: 1rem;
 }
 
-.search-form input {
+.search-query-input {
   flex: 1;
   border: 1px solid #c6d2ca;
   border-radius: 0.8rem;
@@ -349,7 +354,7 @@ body {
   background: #fff;
 }
 
-.search-form input:focus {
+.search-query-input:focus {
   outline: 2px solid rgba(15, 118, 110, 0.25);
   border-color: var(--accent);
 }
@@ -702,7 +707,7 @@ body {
 .details-close:focus-visible,
 .pagination button:focus-visible,
 .search-form button:focus-visible,
-.search-form input:focus-visible,
+.search-query-input:focus-visible,
 .field select:focus-visible,
 .field input:focus-visible {
   outline: 2px solid rgba(15, 118, 110, 0.35);

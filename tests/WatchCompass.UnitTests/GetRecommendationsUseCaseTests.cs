@@ -130,10 +130,16 @@ public class GetRecommendationsUseCaseTests
             return Task.FromResult(SearchResults);
         }
 
-        public Task<PagedResult<MovieCard>> SearchPageAsync(string query, int page, int pageSize, CancellationToken cancellationToken = default)
+        public Task<PagedResult<MovieCard>> SearchPageAsync(
+            string query,
+            int page,
+            int pageSize,
+            int? releaseYear = null,
+            CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
             Queries.Add(query);
+            _ = releaseYear;
             var items = SearchResults
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
@@ -144,10 +150,16 @@ public class GetRecommendationsUseCaseTests
             return Task.FromResult(new PagedResult<MovieCard>(items, page, pageSize, SearchResults.Count, totalPages, page < totalPages));
         }
 
-        public Task<PagedResult<MovieCard>> DiscoverByGenreAsync(string genre, int page, int pageSize, CancellationToken cancellationToken = default)
+        public Task<PagedResult<MovieCard>> DiscoverByGenreAsync(
+            string genre,
+            int page,
+            int pageSize,
+            int? releaseYear = null,
+            CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
             _ = genre;
+            _ = releaseYear;
             var items = SearchResults
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)

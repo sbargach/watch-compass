@@ -59,6 +59,17 @@ const discoverMoviePageTwo = {
   overview: "Two wedding guests get stuck in a time loop."
 };
 
+const searchMovie = {
+  movieId: 5,
+  title: "Arrival",
+  runtimeMinutes: 116,
+  genres: ["Science Fiction", "Drama"],
+  posterUrl: "https://image.tmdb.org/t/p/w500/arrival.jpg",
+  backdropUrl: "https://image.tmdb.org/t/p/original/arrival-backdrop.jpg",
+  releaseYear: 2016,
+  overview: "A linguist works to understand a new visitor."
+};
+
 const fetchMock = vi.fn<typeof fetch>();
 
 describe("App", () => {
@@ -218,7 +229,7 @@ describe("App", () => {
         return createJsonResponse({ items: ["Comedy", "Horror", "Drama"] });
       }
 
-      if (url.endsWith("/api/movies/discover?genre=Comedy&page=1&pageSize=12")) {
+      if (url.endsWith("/api/movies/discover?genre=Comedy&page=1&pageSize=12&releaseYear=2007")) {
         return createJsonResponse({
           items: [discoverMoviePageOne],
           page: 1,
@@ -229,7 +240,7 @@ describe("App", () => {
         });
       }
 
-      if (url.endsWith("/api/movies/discover?genre=Comedy&page=2&pageSize=12")) {
+      if (url.endsWith("/api/movies/discover?genre=Comedy&page=2&pageSize=12&releaseYear=2007")) {
         return createJsonResponse({
           items: [discoverMoviePageTwo],
           page: 2,
@@ -247,11 +258,12 @@ describe("App", () => {
 
     render(<App />);
 
+    await userEvent.type(screen.getByLabelText("Release year"), "2007");
     await userEvent.click(await screen.findByRole("button", { name: "Browse genre Comedy" }));
 
     await screen.findByRole("heading", { name: "Comedy Picks" });
     expect(screen.getByText("Hot Fuzz")).toBeInTheDocument();
-    expect(screen.getByText("13 results. Select a card for details and similar titles.")).toBeInTheDocument();
+    expect(screen.getByText("13 results from 2007. Select a card for details and similar titles.")).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole("button", { name: "Next" }));
 
@@ -259,6 +271,103 @@ describe("App", () => {
 
     await waitFor(() => {
       expect(fetchMock).toHaveBeenCalledTimes(4);
+    });
+  });
+
+  it("includes the release year filter when searching", async () => {
+    fetchMock.mockImplementation(async (input) => {
+      const url = String(input);
+
+      if (url.endsWith("/api/movies/trending?limit=12")) {
+        return createJsonResponse({ items: [trendingMovie] });
+      }
+
+      if (url.endsWith("/api/genres")) {
+        return createJsonResponse({ items: ["Comedy", "Horror", "Drama"] });
+      }
+
+      if (url.endsWith("/api/movies/search?query=Arrival&page=1&pageSize=12&releaseYear=2016")) {
+        return createJsonResponse({
+          items: [searchMovie],
+          page: 1,
+          pageSize: 12,
+          totalResults: 1,
+          totalPages: 1,
+          hasNextPage: false
+        });
+      }
+
+      throw new Error(`Unexpected fetch call: ${url}`);
+    });
+
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<App />);
+
+    await screen.findByLabelText("Search movies");
+
+    await userEvent.type(screen.getByLabelText("Search movies"), "Arrival");
+    await userEvent.type(screen.getByLabelText("Release year"), "2016");
+    await userEvent.click(screen.getByRole("button", { name: "Search" }));
+
+    const searchResultsHeading = await screen.findByRole("heading", { name: "Search Results" });
+    expect(screen.getByRole("heading", { name: "Arrival" })).toBeInTheDocument();
+    const searchSummary = searchResultsHeading.parentElement?.querySelector("p");
+    expect(searchSummary?.textContent).toContain("(1 results in 2016). Select a card for deeper context.");
+  });
+
+  it("uses the input as the single source of truth when the release year is invalid", async () => {
+    fetchMock.mockImplementation(async (input) => {
+      const url = String(input);
+
+      if (url.endsWith("/api/movies/trending?limit=12")) {
+        return createJsonResponse({ items: [trendingMovie] });
+      }
+
+      if (url.endsWith("/api/genres")) {
+        return createJsonResponse({ items: ["Comedy", "Horror", "Drama"] });
+      }
+
+      if (url.endsWith("/api/movies/search?query=Arrival&page=1&pageSize=12&releaseYear=2016")) {
+        return createJsonResponse({
+          items: [searchMovie],
+          page: 1,
+          pageSize: 12,
+          totalResults: 1,
+          totalPages: 1,
+          hasNextPage: false
+        });
+      }
+
+      throw new Error(`Unexpected fetch call: ${url}`);
+    });
+
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<App />);
+
+    await screen.findByLabelText("Search movies");
+
+    await userEvent.type(screen.getByLabelText("Search movies"), "Arrival");
+    await userEvent.type(screen.getByLabelText("Release year"), "2016");
+    await userEvent.click(screen.getByRole("button", { name: "Search" }));
+
+    await screen.findByRole("heading", { name: "Search Results" });
+
+    const releaseYearInput = screen.getByLabelText("Release year");
+    await userEvent.click(releaseYearInput);
+    await userEvent.type(releaseYearInput, "{backspace}{backspace}");
+
+    const searchResultsHeading = screen.getByRole("heading", { name: "Search Results" });
+    const searchSummary = searchResultsHeading.parentElement?.querySelector("p");
+
+    expect(screen.getByText("Use a four-digit release year.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Search" })).toBeDisabled();
+    expect(searchSummary?.textContent).toContain("Fix the release year to refresh results.");
+    expect(screen.getByText(/Release year:/).textContent).toContain("Fix input.");
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledTimes(3);
     });
   });
 });

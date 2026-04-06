@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
 import {
   discoverMovies,
   getApiBaseUrl,
@@ -26,6 +26,8 @@ const RESULTS_PAGE_SIZE = 12;
 const TRENDING_LIMIT = 12;
 const MOODS: readonly Mood[] = ["FeelGood", "Chill", "Intense", "Scary"];
 const DEFAULT_WATCH_REGION = "NL";
+const MIN_RELEASE_YEAR = 1888;
+const MAX_RELEASE_YEAR = new Date().getUTCFullYear() + 1;
 const WATCH_REGIONS = [
   { code: "NL", label: "Netherlands" },
   { code: "US", label: "United States" },
@@ -77,6 +79,12 @@ type RecommendationFormState = {
   avoidGenres: string[];
 };
 
+type ReleaseYearFieldState = {
+  releaseYear: number | null;
+  validationMessage: string | null;
+  statusLabel: string;
+};
+
 function createEmptyDetailsState(): DetailsState {
   return {
     details: null,
@@ -110,6 +118,7 @@ function createInitialRecommendationFormState(): RecommendationFormState {
 
 function App() {
   const [queryInput, setQueryInput] = useState("");
+  const [releaseYearInput, setReleaseYearInput] = useState("");
   const [activeQuery, setActiveQuery] = useState("");
   const [searchPage, setSearchPage] = useState(1);
   const [searchNonce, setSearchNonce] = useState(0);
@@ -147,6 +156,10 @@ function App() {
     error: null,
     hasRequested: false
   });
+  const releaseYearFieldState = getReleaseYearFieldState(releaseYearInput);
+  const releaseYear = releaseYearFieldState.releaseYear;
+  const releaseYearValidationMessage = releaseYearFieldState.validationMessage;
+  const isReleaseYearValid = releaseYearValidationMessage === null;
 
   useEffect(() => {
     let isActive = true;
@@ -215,7 +228,7 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (activeQuery.length === 0) {
+    if (activeQuery.length === 0 || !isReleaseYearValid) {
       return;
     }
 
@@ -229,7 +242,12 @@ function App() {
       });
 
       try {
-        const response = await searchMovies(activeQuery, searchPage, RESULTS_PAGE_SIZE);
+        const response = await searchMovies(
+          activeQuery,
+          searchPage,
+          RESULTS_PAGE_SIZE,
+          releaseYear ?? undefined
+        );
         if (!isActive) {
           return;
         }
@@ -257,10 +275,10 @@ function App() {
     return () => {
       isActive = false;
     };
-  }, [activeQuery, searchPage, searchNonce]);
+  }, [activeQuery, isReleaseYearValid, releaseYear, searchPage, searchNonce]);
 
   useEffect(() => {
-    if (discoverGenre === null) {
+    if (discoverGenre === null || !isReleaseYearValid) {
       return;
     }
 
@@ -274,7 +292,12 @@ function App() {
       });
 
       try {
-        const response = await discoverMovies(discoverGenre, discoverPage, RESULTS_PAGE_SIZE);
+        const response = await discoverMovies(
+          discoverGenre,
+          discoverPage,
+          RESULTS_PAGE_SIZE,
+          releaseYear ?? undefined
+        );
         if (!isActive) {
           return;
         }
@@ -302,7 +325,7 @@ function App() {
     return () => {
       isActive = false;
     };
-  }, [discoverGenre, discoverPage]);
+  }, [discoverGenre, discoverPage, isReleaseYearValid, releaseYear]);
 
   const selectedMovieId = selectedMovie?.movieId ?? null;
   const watchRegionLabel = getWatchRegionLabel(watchRegion);
@@ -430,6 +453,29 @@ function App() {
     setDetailsState(createLoadingDetailsState());
   };
 
+  const handleReleaseYearChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const nextInput = event.target.value;
+    const currentFieldState = getReleaseYearFieldState(releaseYearInput);
+    const nextFieldState = getReleaseYearFieldState(nextInput);
+
+    setReleaseYearInput(nextInput);
+
+    if (
+      nextFieldState.validationMessage !== null ||
+      currentFieldState.releaseYear === nextFieldState.releaseYear
+    ) {
+      return;
+    }
+
+    if (activeQuery.length > 0) {
+      setSearchPage(1);
+    }
+
+    if (discoverGenre !== null) {
+      setDiscoverPage(1);
+    }
+  };
+
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const trimmedQuery = queryInput.trim();
@@ -443,6 +489,10 @@ function App() {
         isLoading: false,
         error: null
       });
+      return;
+    }
+
+    if (releaseYearValidationMessage !== null) {
       return;
     }
 
@@ -523,13 +573,28 @@ function App() {
           <div className="search-toolbar">
             <form className="search-form" onSubmit={handleSubmit}>
               <input
+                className="search-query-input"
                 type="search"
                 placeholder="Search movies by title..."
                 value={queryInput}
                 onChange={(event) => setQueryInput(event.target.value)}
                 aria-label="Search movies"
               />
-              <button type="submit" disabled={searchState.isLoading}>
+              <label className="field search-year-field">
+                <span>Release year</span>
+                <input
+                  className="search-year-input"
+                  type="number"
+                  min={MIN_RELEASE_YEAR}
+                  max={MAX_RELEASE_YEAR}
+                  placeholder="Any year"
+                  value={releaseYearInput}
+                  onChange={handleReleaseYearChange}
+                  aria-label="Release year"
+                  aria-invalid={releaseYearValidationMessage !== null}
+                />
+              </label>
+              <button type="submit" disabled={searchState.isLoading || !isReleaseYearValid}>
                 {searchState.isLoading ? "Searching..." : "Search"}
               </button>
             </form>
@@ -547,8 +612,10 @@ function App() {
           </div>
 
           <p className="api-target">
-            API: {getApiBaseUrl()} {" | "} Provider availability uses {watchRegionLabel}.
+            API: {getApiBaseUrl()} {" | "} Provider availability uses {watchRegionLabel}. {" | "} Release year:{" "}
+            {releaseYearFieldState.statusLabel}.
           </p>
+          {releaseYearValidationMessage && <p className="status-text status-error">{releaseYearValidationMessage}</p>}
         </section>
 
         <section className="recommendation-panel">
@@ -708,8 +775,8 @@ function App() {
                 <h2>Genre Explorer</h2>
               </div>
               <p className="genre-explorer-copy">
-                Pick a genre to browse a popularity-sorted catalog slice from the backend. Results reuse the shared
-                details panel and pagination flow.
+                Pick a genre to browse a popularity-sorted catalog slice from the backend. The toolbar release-year
+                filter also narrows this view. Results reuse the shared details panel and pagination flow.
               </p>
             </div>
 
@@ -751,18 +818,25 @@ function App() {
             {!discoverGenre && !genresState.isLoading && !genresState.error && genresState.items.length > 0 && (
               <p className="status-text">Select a genre to load a dedicated discovery page.</p>
             )}
-            {discoverState.error && <p className="status-text status-error">{discoverState.error}</p>}
-            {discoverState.isLoading && discoverGenre && <p className="status-text">Loading {discoverGenre} picks...</p>}
-            {discoverGenre && !discoverState.isLoading && !discoverState.error && !hasDiscoverResults && (
+            {discoverGenre && !isReleaseYearValid && (
+              <p className="status-text">Fix the release year to refresh this genre view.</p>
+            )}
+            {isReleaseYearValid && discoverState.error && <p className="status-text status-error">{discoverState.error}</p>}
+            {isReleaseYearValid && discoverState.isLoading && discoverGenre && (
+              <p className="status-text">Loading {discoverGenre} picks...</p>
+            )}
+            {discoverGenre && isReleaseYearValid && !discoverState.isLoading && !discoverState.error && !hasDiscoverResults && (
               <p className="status-text">No movies were returned for this genre.</p>
             )}
 
-            {hasDiscoverResults && (
+            {hasDiscoverResults && isReleaseYearValid && (
               <div className="genre-results">
                 <div className="section-heading genre-results-heading">
                   <h2>{discoverGenre} Picks</h2>
                   <p>
-                    {discoverState.result?.totalResults ?? 0} results. Select a card for details and similar titles.
+                    {discoverState.result?.totalResults ?? 0} results
+                    {releaseYear !== null ? ` from ${releaseYear}` : ""}. Select a card for details and
+                    similar titles.
                   </p>
                 </div>
 
@@ -814,16 +888,19 @@ function App() {
               <h2>Search Results</h2>
               <p>
                 Query: <strong>{activeQuery}</strong>
-                {searchState.result && ` (${searchState.result.totalResults} results). Select a card for deeper context.`}
+                {!isReleaseYearValid && " Fix the release year to refresh results."}
+                {isReleaseYearValid &&
+                  searchState.result &&
+                  ` (${searchState.result.totalResults} results${releaseYear !== null ? ` in ${releaseYear}` : ""}). Select a card for deeper context.`}
               </p>
             </div>
 
-            {searchState.error && <p className="status-text status-error">{searchState.error}</p>}
-            {searchState.isLoading && <p className="status-text">Loading page {searchPage}...</p>}
-            {!searchState.isLoading && !searchState.error && !hasSearchResults && (
+            {isReleaseYearValid && searchState.error && <p className="status-text status-error">{searchState.error}</p>}
+            {isReleaseYearValid && searchState.isLoading && <p className="status-text">Loading page {searchPage}...</p>}
+            {isReleaseYearValid && !searchState.isLoading && !searchState.error && !hasSearchResults && (
               <p className="status-text">No movies matched your query.</p>
             )}
-            {hasSearchResults && (
+            {hasSearchResults && isReleaseYearValid && (
               <>
                 <MovieGrid
                   movies={searchState.result?.items ?? []}
@@ -882,6 +959,40 @@ function toErrorMessage(error: unknown): string {
   }
 
   return "Unexpected error while calling the API.";
+}
+
+function getReleaseYearFieldState(input: string): ReleaseYearFieldState {
+  const trimmedInput = input.trim();
+  if (trimmedInput.length === 0) {
+    return {
+      releaseYear: null,
+      validationMessage: null,
+      statusLabel: "Any year"
+    };
+  }
+
+  if (!/^\d{4}$/.test(trimmedInput)) {
+    return {
+      releaseYear: null,
+      validationMessage: "Use a four-digit release year.",
+      statusLabel: "Fix input"
+    };
+  }
+
+  const releaseYear = Number.parseInt(trimmedInput, 10);
+  if (releaseYear < MIN_RELEASE_YEAR || releaseYear > MAX_RELEASE_YEAR) {
+    return {
+      releaseYear: null,
+      validationMessage: `Release year must be between ${MIN_RELEASE_YEAR} and ${MAX_RELEASE_YEAR}.`,
+      statusLabel: "Fix input"
+    };
+  }
+
+  return {
+    releaseYear,
+    validationMessage: null,
+    statusLabel: String(releaseYear)
+  };
 }
 
 export default App;

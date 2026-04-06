@@ -12,16 +12,28 @@ public sealed class NoOpMovieCatalog : IMovieCatalog
         return Task.FromResult<IReadOnlyList<MovieCard>>(Array.Empty<MovieCard>());
     }
 
-    public Task<PagedResult<MovieCard>> SearchPageAsync(string query, int page, int pageSize, CancellationToken cancellationToken = default)
+    public Task<PagedResult<MovieCard>> SearchPageAsync(
+        string query,
+        int page,
+        int pageSize,
+        int? releaseYear = null,
+        CancellationToken cancellationToken = default)
     {
         _ = query;
+        _ = releaseYear;
         cancellationToken.ThrowIfCancellationRequested();
         return Task.FromResult(new PagedResult<MovieCard>(Array.Empty<MovieCard>(), page, pageSize, 0, 0, false));
     }
 
-    public Task<PagedResult<MovieCard>> DiscoverByGenreAsync(string genre, int page, int pageSize, CancellationToken cancellationToken = default)
+    public Task<PagedResult<MovieCard>> DiscoverByGenreAsync(
+        string genre,
+        int page,
+        int pageSize,
+        int? releaseYear = null,
+        CancellationToken cancellationToken = default)
     {
         _ = genre;
+        _ = releaseYear;
         cancellationToken.ThrowIfCancellationRequested();
         return Task.FromResult(new PagedResult<MovieCard>(Array.Empty<MovieCard>(), page, pageSize, 0, 0, false));
     }

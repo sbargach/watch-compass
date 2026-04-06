@@ -57,19 +57,31 @@ public class GetTrendingMoviesUseCaseTests
             throw new NotImplementedException();
         }
 
-        public Task<PagedResult<MovieCard>> SearchPageAsync(string query, int page, int pageSize, CancellationToken cancellationToken = default)
+        public Task<PagedResult<MovieCard>> SearchPageAsync(
+            string query,
+            int page,
+            int pageSize,
+            int? releaseYear = null,
+            CancellationToken cancellationToken = default)
         {
             _ = query;
             _ = page;
             _ = pageSize;
+            _ = releaseYear;
             throw new NotImplementedException();
         }
 
-        public Task<PagedResult<MovieCard>> DiscoverByGenreAsync(string genre, int page, int pageSize, CancellationToken cancellationToken = default)
+        public Task<PagedResult<MovieCard>> DiscoverByGenreAsync(
+            string genre,
+            int page,
+            int pageSize,
+            int? releaseYear = null,
+            CancellationToken cancellationToken = default)
         {
             _ = genre;
             _ = page;
             _ = pageSize;
+            _ = releaseYear;
             throw new NotImplementedException();
         }
 

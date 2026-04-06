@@ -28,11 +28,16 @@ public sealed class CachedMovieCatalog : IMovieCatalog
 
     public async Task<IReadOnlyList<MovieCard>> SearchAsync(string query, CancellationToken cancellationToken = default)
     {
-        var paged = await SearchPageAsync(query, DefaultSearchPage, DefaultSearchPageSize, cancellationToken);
+        var paged = await SearchPageAsync(query, DefaultSearchPage, DefaultSearchPageSize, cancellationToken: cancellationToken);
         return paged.Items;
     }
 
-    public async Task<PagedResult<MovieCard>> SearchPageAsync(string query, int page, int pageSize, CancellationToken cancellationToken = default)
+    public async Task<PagedResult<MovieCard>> SearchPageAsync(
+        string query,
+        int page,
+        int pageSize,
+        int? releaseYear = null,
+        CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
         if (string.IsNullOrWhiteSpace(query))
@@ -41,17 +46,22 @@ public sealed class CachedMovieCatalog : IMovieCatalog
         }
 
         var normalizedQuery = query.Trim().ToLowerInvariant();
-        var key = $"search:{normalizedQuery}:{page}:{pageSize}";
+        var key = $"search:{normalizedQuery}:{releaseYear?.ToString() ?? "all"}:{page}:{pageSize}";
         if (_cache.TryGetValue(key, out PagedResult<MovieCard>? cachedResults) && cachedResults is not null)
         {
             return cachedResults;
         }
 
-        var results = await _inner.SearchPageAsync(query, page, pageSize, cancellationToken);
+        var results = await _inner.SearchPageAsync(query, page, pageSize, releaseYear, cancellationToken);
         return CacheOrReturn(key, results, _options.SearchDuration);
     }
 
-    public async Task<PagedResult<MovieCard>> DiscoverByGenreAsync(string genre, int page, int pageSize, CancellationToken cancellationToken = default)
+    public async Task<PagedResult<MovieCard>> DiscoverByGenreAsync(
+        string genre,
+        int page,
+        int pageSize,
+        int? releaseYear = null,
+        CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
         if (string.IsNullOrWhiteSpace(genre))
@@ -60,13 +70,13 @@ public sealed class CachedMovieCatalog : IMovieCatalog
         }
 
         var normalizedGenre = genre.Trim().ToLowerInvariant();
-        var key = $"discover:{normalizedGenre}:{page}:{pageSize}";
+        var key = $"discover:{normalizedGenre}:{releaseYear?.ToString() ?? "all"}:{page}:{pageSize}";
         if (_cache.TryGetValue(key, out PagedResult<MovieCard>? cachedResults) && cachedResults is not null)
         {
             return cachedResults;
         }
 
-        var results = await _inner.DiscoverByGenreAsync(genre, page, pageSize, cancellationToken);
+        var results = await _inner.DiscoverByGenreAsync(genre, page, pageSize, releaseYear, cancellationToken);
         return CacheOrReturn(key, results, _options.DiscoverDuration);
     }
 

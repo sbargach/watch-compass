@@ -84,6 +84,20 @@ public class TmdbMovieCatalogIntegrationTests
     }
 
     [Test]
+    public async Task SearchPageAsync_WithReleaseYear_ForwardsFilter()
+    {
+        StubGenres("genres.json");
+        StubSearch("matrix", "search.json", releaseYear: 1999);
+
+        using var httpClient = CreateHttpClient();
+        var catalog = CreateCatalog(httpClient);
+
+        var result = await catalog.SearchPageAsync("matrix", page: 1, pageSize: 1, releaseYear: 1999);
+
+        result.Items.Count.ShouldBe(1);
+    }
+
+    [Test]
     public async Task DiscoverByGenreAsync_ReturnsRequestedSliceAndMetadata()
     {
         StubGenres("genres.json");
@@ -102,6 +116,20 @@ public class TmdbMovieCatalogIntegrationTests
         result.TotalResults.ShouldBe(22);
         result.TotalPages.ShouldBe(22);
         result.HasNextPage.ShouldBeTrue();
+    }
+
+    [Test]
+    public async Task DiscoverByGenreAsync_WithReleaseYear_ForwardsFilter()
+    {
+        StubGenres("genres.json");
+        StubDiscover(28, "discover-action.json", releaseYear: 2022);
+
+        using var httpClient = CreateHttpClient();
+        var catalog = CreateCatalog(httpClient);
+
+        var result = await catalog.DiscoverByGenreAsync("Action", page: 1, pageSize: 1, releaseYear: 2022);
+
+        result.Items.Count.ShouldBe(1);
     }
 
     [Test]
@@ -196,16 +224,21 @@ public class TmdbMovieCatalogIntegrationTests
         results[1].ReleaseYear.ShouldBe(2023);
     }
 
-    private void StubSearch(string query, string fixtureName, int tmdbPage = 1)
+    private void StubSearch(string query, string fixtureName, int tmdbPage = 1, int? releaseYear = null)
     {
-        _server.Given(Request.Create()
-                .WithPath("/3/search/movie")
-                .WithParam("query", query)
-                .WithParam("page", tmdbPage.ToString())
-                .WithParam("language", _options.Language)
-                .WithParam("include_adult", "false")
-                .WithParam("region", _options.DefaultCountryCode)
-                .UsingGet())
+        var request = Request.Create()
+            .WithPath("/3/search/movie")
+            .WithParam("query", query)
+            .WithParam("page", tmdbPage.ToString())
+            .WithParam("language", _options.Language)
+            .WithParam("include_adult", "false")
+            .WithParam("region", _options.DefaultCountryCode);
+        if (releaseYear.HasValue)
+        {
+            request = request.WithParam("primary_release_year", releaseYear.Value.ToString());
+        }
+
+        _server.Given(request.UsingGet())
             .RespondWith(Response.Create()
                 .WithStatusCode((int)HttpStatusCode.OK)
                 .WithHeader("Content-Type", "application/json")
@@ -224,17 +257,22 @@ public class TmdbMovieCatalogIntegrationTests
                 .WithBodyFromFile(GetFixturePath(fixtureName)));
     }
 
-    private void StubDiscover(int genreId, string fixtureName, int tmdbPage = 1)
+    private void StubDiscover(int genreId, string fixtureName, int tmdbPage = 1, int? releaseYear = null)
     {
-        _server.Given(Request.Create()
-                .WithPath("/3/discover/movie")
-                .WithParam("with_genres", genreId.ToString())
-                .WithParam("page", tmdbPage.ToString())
-                .WithParam("language", _options.Language)
-                .WithParam("include_adult", "false")
-                .WithParam("sort_by", "popularity.desc")
-                .WithParam("region", _options.DefaultCountryCode)
-                .UsingGet())
+        var request = Request.Create()
+            .WithPath("/3/discover/movie")
+            .WithParam("with_genres", genreId.ToString())
+            .WithParam("page", tmdbPage.ToString())
+            .WithParam("language", _options.Language)
+            .WithParam("include_adult", "false")
+            .WithParam("sort_by", "popularity.desc")
+            .WithParam("region", _options.DefaultCountryCode);
+        if (releaseYear.HasValue)
+        {
+            request = request.WithParam("primary_release_year", releaseYear.Value.ToString());
+        }
+
+        _server.Given(request.UsingGet())
             .RespondWith(Response.Create()
                 .WithStatusCode((int)HttpStatusCode.OK)
                 .WithHeader("Content-Type", "application/json")

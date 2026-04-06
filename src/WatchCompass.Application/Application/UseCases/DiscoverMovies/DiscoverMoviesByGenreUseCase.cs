@@ -12,11 +12,16 @@ public sealed class DiscoverMoviesByGenreUseCase
         _movieCatalog = movieCatalog;
     }
 
-    public Task<PagedResult<MovieCard>> GetAsync(string genre, int page, int pageSize, CancellationToken cancellationToken = default)
+    public Task<PagedResult<MovieCard>> GetAsync(
+        string genre,
+        int page,
+        int pageSize,
+        int? releaseYear = null,
+        CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(genre);
         ArgumentOutOfRangeException.ThrowIfLessThan(page, 1);
         ArgumentOutOfRangeException.ThrowIfLessThan(pageSize, 1);
-        return _movieCatalog.DiscoverByGenreAsync(genre, page, pageSize, cancellationToken);
+        return _movieCatalog.DiscoverByGenreAsync(genre, page, pageSize, releaseYear, cancellationToken);
     }
 }

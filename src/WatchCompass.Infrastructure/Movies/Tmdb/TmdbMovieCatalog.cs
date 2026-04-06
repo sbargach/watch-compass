@@ -39,11 +39,16 @@ public sealed class TmdbMovieCatalog : IMovieCatalog
 
     public async Task<IReadOnlyList<MovieCard>> SearchAsync(string query, CancellationToken cancellationToken = default)
     {
-        var paged = await SearchPageAsync(query, page: 1, pageSize: TmdbSearchPageSize, cancellationToken);
+        var paged = await SearchPageAsync(query, page: 1, pageSize: TmdbSearchPageSize, cancellationToken: cancellationToken);
         return paged.Items;
     }
 
-    public async Task<PagedResult<MovieCard>> SearchPageAsync(string query, int page, int pageSize, CancellationToken cancellationToken = default)
+    public async Task<PagedResult<MovieCard>> SearchPageAsync(
+        string query,
+        int page,
+        int pageSize,
+        int? releaseYear = null,
+        CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
         if (string.IsNullOrWhiteSpace(query))
@@ -69,18 +74,23 @@ public sealed class TmdbMovieCatalog : IMovieCatalog
             return await FetchPagedResultsAsync(
                 page,
                 pageSize,
-                (tmdbPage, token) => _apiClient.SearchMoviesAsync(trimmedQuery, tmdbPage, token),
+                (tmdbPage, token) => _apiClient.SearchMoviesAsync(trimmedQuery, tmdbPage, releaseYear, token),
                 SearchTag,
                 cancellationToken);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            _logger.LogWarning(ex, "TMDB search failed for query {Query}", trimmedQuery);
+            _logger.LogWarning(ex, "TMDB search failed for query {Query} and release year {ReleaseYear}", trimmedQuery, releaseYear);
             throw;
         }
     }
 
-    public async Task<PagedResult<MovieCard>> DiscoverByGenreAsync(string genre, int page, int pageSize, CancellationToken cancellationToken = default)
+    public async Task<PagedResult<MovieCard>> DiscoverByGenreAsync(
+        string genre,
+        int page,
+        int pageSize,
+        int? releaseYear = null,
+        CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
         if (string.IsNullOrWhiteSpace(genre))
@@ -116,13 +126,13 @@ public sealed class TmdbMovieCatalog : IMovieCatalog
             return await FetchPagedResultsAsync(
                 page,
                 pageSize,
-                (tmdbPage, token) => _apiClient.DiscoverMoviesByGenreAsync(genreEntry.Key, tmdbPage, token),
+                (tmdbPage, token) => _apiClient.DiscoverMoviesByGenreAsync(genreEntry.Key, tmdbPage, releaseYear, token),
                 DiscoverTag,
                 cancellationToken);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            _logger.LogWarning(ex, "TMDB genre discovery failed for {Genre}", trimmedGenre);
+            _logger.LogWarning(ex, "TMDB genre discovery failed for {Genre} and release year {ReleaseYear}", trimmedGenre, releaseYear);
             throw;
         }
     }

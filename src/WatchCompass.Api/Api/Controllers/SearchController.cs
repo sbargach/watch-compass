@@ -16,6 +16,7 @@ public sealed class SearchController : ControllerBase
     private const int DefaultSearchPage = 1;
     private const int DefaultSearchPageSize = 10;
     private const int MaxSearchPageSize = 50;
+    private const int MinReleaseYear = 1888;
 
     private readonly SearchMoviesUseCase _searchMoviesUseCase;
     private readonly DiscoverMoviesByGenreUseCase _discoverMoviesByGenreUseCase;
@@ -42,6 +43,7 @@ public sealed class SearchController : ControllerBase
         [FromQuery] string? query,
         [FromQuery] int? page,
         [FromQuery] int? pageSize,
+        [FromQuery] int? releaseYear,
         CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(query))
@@ -53,27 +55,13 @@ public sealed class SearchController : ControllerBase
             });
         }
 
-        var effectivePage = page ?? DefaultSearchPage;
-        if (effectivePage <= 0)
+        var requestProblem = ValidatePagedRequest(page, pageSize, releaseYear, out var effectivePage, out var effectivePageSize);
+        if (requestProblem is not null)
         {
-            return ToProblem(new ProblemDetails
-            {
-                Status = StatusCodes.Status400BadRequest,
-                Title = "Page must be greater than 0."
-            });
+            return ToProblem(requestProblem);
         }
 
-        var effectivePageSize = pageSize ?? DefaultSearchPageSize;
-        if (effectivePageSize <= 0 || effectivePageSize > MaxSearchPageSize)
-        {
-            return ToProblem(new ProblemDetails
-            {
-                Status = StatusCodes.Status400BadRequest,
-                Title = $"PageSize must be between 1 and {MaxSearchPageSize}."
-            });
-        }
-
-        var results = await _searchMoviesUseCase.SearchAsync(query, effectivePage, effectivePageSize, cancellationToken);
+        var results = await _searchMoviesUseCase.SearchAsync(query, effectivePage, effectivePageSize, releaseYear, cancellationToken);
         return Ok(ToPagedResponse(results));
     }
 
@@ -82,6 +70,7 @@ public sealed class SearchController : ControllerBase
         [FromQuery] string? genre,
         [FromQuery] int? page,
         [FromQuery] int? pageSize,
+        [FromQuery] int? releaseYear,
         CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(genre))
@@ -93,27 +82,13 @@ public sealed class SearchController : ControllerBase
             });
         }
 
-        var effectivePage = page ?? DefaultSearchPage;
-        if (effectivePage <= 0)
+        var requestProblem = ValidatePagedRequest(page, pageSize, releaseYear, out var effectivePage, out var effectivePageSize);
+        if (requestProblem is not null)
         {
-            return ToProblem(new ProblemDetails
-            {
-                Status = StatusCodes.Status400BadRequest,
-                Title = "Page must be greater than 0."
-            });
+            return ToProblem(requestProblem);
         }
 
-        var effectivePageSize = pageSize ?? DefaultSearchPageSize;
-        if (effectivePageSize <= 0 || effectivePageSize > MaxSearchPageSize)
-        {
-            return ToProblem(new ProblemDetails
-            {
-                Status = StatusCodes.Status400BadRequest,
-                Title = $"PageSize must be between 1 and {MaxSearchPageSize}."
-            });
-        }
-
-        var results = await _discoverMoviesByGenreUseCase.GetAsync(genre, effectivePage, effectivePageSize, cancellationToken);
+        var results = await _discoverMoviesByGenreUseCase.GetAsync(genre, effectivePage, effectivePageSize, releaseYear, cancellationToken);
         return Ok(ToPagedResponse(results));
     }
 
@@ -242,5 +217,56 @@ public sealed class SearchController : ControllerBase
         {
             StatusCode = details.Status
         };
+    }
+
+    private static ProblemDetails? ValidateReleaseYear(int? releaseYear)
+    {
+        if (releaseYear is null)
+        {
+            return null;
+        }
+
+        var maxReleaseYear = DateTime.UtcNow.Year + 1;
+        if (releaseYear.Value >= MinReleaseYear && releaseYear.Value <= maxReleaseYear)
+        {
+            return null;
+        }
+
+        return new ProblemDetails
+        {
+            Status = StatusCodes.Status400BadRequest,
+            Title = $"ReleaseYear must be between {MinReleaseYear} and {maxReleaseYear}."
+        };
+    }
+
+    private static ProblemDetails? ValidatePagedRequest(
+        int? page,
+        int? pageSize,
+        int? releaseYear,
+        out int effectivePage,
+        out int effectivePageSize)
+    {
+        effectivePage = page ?? DefaultSearchPage;
+        if (effectivePage <= 0)
+        {
+            effectivePageSize = DefaultSearchPageSize;
+            return new ProblemDetails
+            {
+                Status = StatusCodes.Status400BadRequest,
+                Title = "Page must be greater than 0."
+            };
+        }
+
+        effectivePageSize = pageSize ?? DefaultSearchPageSize;
+        if (effectivePageSize <= 0 || effectivePageSize > MaxSearchPageSize)
+        {
+            return new ProblemDetails
+            {
+                Status = StatusCodes.Status400BadRequest,
+                Title = $"PageSize must be between 1 and {MaxSearchPageSize}."
+            };
+        }
+
+        return ValidateReleaseYear(releaseYear);
     }
 }

@@ -103,6 +103,17 @@ public class ApiIntegrationTests
     }
 
     [Test]
+    public async Task SearchEndpoint_WithReleaseYear_ForwardsFilter()
+    {
+        StubGenres(LoadFixture("genres.json"));
+        StubSearch("test", LoadFixture("search.json"), releaseYear: 2020);
+
+        var response = await _client.GetAsync("/api/movies/search?query=test&releaseYear=2020");
+
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
+    }
+
+    [Test]
     public async Task SearchEndpoint_WithInvalidPageSize_ReturnsProblemDetails()
     {
         var response = await _client.GetAsync("/api/movies/search?query=test&pageSize=0");
@@ -112,6 +123,18 @@ public class ApiIntegrationTests
         var title = document.RootElement.GetProperty("title").GetString();
         title.ShouldNotBeNull();
         title!.ToLowerInvariant().ShouldContain("pagesize");
+    }
+
+    [Test]
+    public async Task SearchEndpoint_WithInvalidReleaseYear_ReturnsProblemDetails()
+    {
+        var response = await _client.GetAsync("/api/movies/search?query=test&releaseYear=1700");
+
+        response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var title = document.RootElement.GetProperty("title").GetString();
+        title.ShouldNotBeNull();
+        title!.ToLowerInvariant().ShouldContain("releaseyear");
     }
 
     [Test]
@@ -134,6 +157,17 @@ public class ApiIntegrationTests
         document.RootElement.GetProperty("totalResults").GetInt32().ShouldBe(22);
         document.RootElement.GetProperty("totalPages").GetInt32().ShouldBe(22);
         document.RootElement.GetProperty("hasNextPage").GetBoolean().ShouldBeTrue();
+    }
+
+    [Test]
+    public async Task DiscoverEndpoint_WithReleaseYear_ForwardsFilter()
+    {
+        StubGenres(LoadFixture("genres.json"));
+        StubDiscover(28, LoadFixture("discover-action.json"), releaseYear: 2022);
+
+        var response = await _client.GetAsync("/api/movies/discover?genre=Action&releaseYear=2022");
+
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
     }
 
     [Test]
@@ -396,16 +430,22 @@ public class ApiIntegrationTests
         items[0].GetProperty("releaseYear").GetInt32().ShouldBe(2024);
     }
 
-    private void StubSearch(string query, string body, int tmdbPage = 1)
+    private void StubSearch(string query, string body, int tmdbPage = 1, int? releaseYear = null)
     {
-        _server.Given(Request.Create()
-                .UsingGet()
-                .WithPath("/3/search/movie")
-                .WithParam("query", query)
-                .WithParam("page", tmdbPage.ToString())
-                .WithParam("language", "en-US")
-                .WithParam("include_adult", "false")
-                .WithParam("region", "US"))
+        var request = Request.Create()
+            .UsingGet()
+            .WithPath("/3/search/movie")
+            .WithParam("query", query)
+            .WithParam("page", tmdbPage.ToString())
+            .WithParam("language", "en-US")
+            .WithParam("include_adult", "false")
+            .WithParam("region", "US");
+        if (releaseYear.HasValue)
+        {
+            request = request.WithParam("primary_release_year", releaseYear.Value.ToString());
+        }
+
+        _server.Given(request)
             .RespondWith(Response.Create()
                 .WithStatusCode((int)HttpStatusCode.OK)
                 .WithHeader("Content-Type", "application/json")
@@ -437,17 +477,23 @@ public class ApiIntegrationTests
                 .WithBody(body));
     }
 
-    private void StubDiscover(int genreId, string body, int tmdbPage = 1)
+    private void StubDiscover(int genreId, string body, int tmdbPage = 1, int? releaseYear = null)
     {
-        _server.Given(Request.Create()
-                .UsingGet()
-                .WithPath("/3/discover/movie")
-                .WithParam("with_genres", genreId.ToString())
-                .WithParam("page", tmdbPage.ToString())
-                .WithParam("language", "en-US")
-                .WithParam("include_adult", "false")
-                .WithParam("sort_by", "popularity.desc")
-                .WithParam("region", "US"))
+        var request = Request.Create()
+            .UsingGet()
+            .WithPath("/3/discover/movie")
+            .WithParam("with_genres", genreId.ToString())
+            .WithParam("page", tmdbPage.ToString())
+            .WithParam("language", "en-US")
+            .WithParam("include_adult", "false")
+            .WithParam("sort_by", "popularity.desc")
+            .WithParam("region", "US");
+        if (releaseYear.HasValue)
+        {
+            request = request.WithParam("primary_release_year", releaseYear.Value.ToString());
+        }
+
+        _server.Given(request)
             .RespondWith(Response.Create()
                 .WithStatusCode((int)HttpStatusCode.OK)
                 .WithHeader("Content-Type", "application/json")

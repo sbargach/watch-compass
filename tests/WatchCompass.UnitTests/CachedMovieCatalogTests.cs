@@ -25,6 +25,18 @@ public class CachedMovieCatalogTests
     }
 
     [Test]
+    public async Task SearchPageAsync_SeparatesCacheEntriesByReleaseYear()
+    {
+        var inner = new CountingMovieCatalog();
+        var catalog = CreateCatalog(inner);
+
+        await catalog.SearchPageAsync("Matrix", 1, 12, 1999);
+        await catalog.SearchPageAsync("Matrix", 1, 12, 2003);
+
+        inner.SearchPageCalls.ShouldBe(2);
+    }
+
+    [Test]
     public async Task GetWatchProvidersAsync_CachesByMovieAndCountry()
     {
         var inner = new CountingMovieCatalog();
@@ -46,6 +58,18 @@ public class CachedMovieCatalogTests
         await catalog.DiscoverByGenreAsync("action", 1, 12);
 
         inner.DiscoverCalls.ShouldBe(1);
+    }
+
+    [Test]
+    public async Task DiscoverByGenreAsync_SeparatesCacheEntriesByReleaseYear()
+    {
+        var inner = new CountingMovieCatalog();
+        var catalog = CreateCatalog(inner);
+
+        await catalog.DiscoverByGenreAsync("Action", 1, 12, 1999);
+        await catalog.DiscoverByGenreAsync("Action", 1, 12, 2005);
+
+        inner.DiscoverCalls.ShouldBe(2);
     }
 
     [Test]
@@ -100,17 +124,29 @@ public class CachedMovieCatalogTests
             return Task.FromResult<IReadOnlyList<MovieCard>>(new[] { new MovieCard(1, query.Trim(), 100, Array.Empty<string>()) });
         }
 
-        public Task<PagedResult<MovieCard>> SearchPageAsync(string query, int page, int pageSize, CancellationToken cancellationToken = default)
+        public Task<PagedResult<MovieCard>> SearchPageAsync(
+            string query,
+            int page,
+            int pageSize,
+            int? releaseYear = null,
+            CancellationToken cancellationToken = default)
         {
             SearchPageCalls++;
-            var items = new[] { new MovieCard(1, query.Trim(), 100, Array.Empty<string>()) }.Take(pageSize).ToList();
+            var title = releaseYear is null ? query.Trim() : $"{query.Trim()} {releaseYear}";
+            var items = new[] { new MovieCard(1, title, 100, Array.Empty<string>()) }.Take(pageSize).ToList();
             return Task.FromResult(new PagedResult<MovieCard>(items, page, pageSize, 1, 1, false));
         }
 
-        public Task<PagedResult<MovieCard>> DiscoverByGenreAsync(string genre, int page, int pageSize, CancellationToken cancellationToken = default)
+        public Task<PagedResult<MovieCard>> DiscoverByGenreAsync(
+            string genre,
+            int page,
+            int pageSize,
+            int? releaseYear = null,
+            CancellationToken cancellationToken = default)
         {
             DiscoverCalls++;
-            var items = new[] { new MovieCard(1, genre.Trim(), 100, Array.Empty<string>()) }.Take(pageSize).ToList();
+            var title = releaseYear is null ? genre.Trim() : $"{genre.Trim()} {releaseYear}";
+            var items = new[] { new MovieCard(1, title, 100, Array.Empty<string>()) }.Take(pageSize).ToList();
             return Task.FromResult(new PagedResult<MovieCard>(items, page, pageSize, 1, 1, false));
         }
 
