@@ -7,6 +7,7 @@ namespace WatchCompass.Application.UseCases.Recommendations;
 
 public sealed class GetRecommendationsUseCase
 {
+    private const int RecommendationSearchPageSize = 20;
     private readonly IMovieCatalog _movieCatalog;
 
     public GetRecommendationsUseCase(IMovieCatalog movieCatalog)
@@ -14,7 +15,13 @@ public sealed class GetRecommendationsUseCase
         _movieCatalog = movieCatalog;
     }
 
-    public async Task<IReadOnlyList<Recommendation>> GetRecommendationsAsync(Mood mood, TimeBudget timeBudget, string? query, IReadOnlyList<string> avoidGenres, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<Recommendation>> GetRecommendationsAsync(
+        Mood mood,
+        TimeBudget timeBudget,
+        string? query,
+        IReadOnlyList<string> avoidGenres,
+        int? releaseYear = null,
+        CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -29,8 +36,13 @@ public sealed class GetRecommendationsUseCase
             }
             : query.Trim();
 
-        var searchResults = await _movieCatalog.SearchAsync(effectiveQuery, cancellationToken);
-        if (searchResults.Count == 0)
+        var searchResults = await _movieCatalog.SearchPageAsync(
+            effectiveQuery,
+            page: 1,
+            pageSize: RecommendationSearchPageSize,
+            releaseYear: releaseYear,
+            cancellationToken: cancellationToken);
+        if (searchResults.Items.Count == 0)
         {
             return Array.Empty<Recommendation>();
         }
@@ -47,7 +59,7 @@ public sealed class GetRecommendationsUseCase
         }
 
         var recommendations = new List<Recommendation>();
-        foreach (var movie in searchResults.Take(5))
+        foreach (var movie in searchResults.Items.Take(5))
         {
             cancellationToken.ThrowIfCancellationRequested();
 
@@ -56,7 +68,7 @@ public sealed class GetRecommendationsUseCase
             var title = movie.Title;
             var posterUrl = movie.PosterUrl;
             var backdropUrl = movie.BackdropUrl;
-            var releaseYear = movie.ReleaseYear;
+            var movieReleaseYear = movie.ReleaseYear;
             var overview = movie.Overview;
             var runtimeMissing = !runtime.HasValue || runtime.Value <= 0;
 
@@ -70,7 +82,7 @@ public sealed class GetRecommendationsUseCase
                     title = details.Title;
                     posterUrl ??= details.PosterUrl;
                     backdropUrl ??= details.BackdropUrl;
-                    releaseYear ??= details.ReleaseYear;
+                    movieReleaseYear ??= details.ReleaseYear;
                     overview ??= details.Overview;
                 }
             }
@@ -104,7 +116,7 @@ public sealed class GetRecommendationsUseCase
                 Array.Empty<string>(),
                 posterUrl,
                 backdropUrl,
-                releaseYear,
+                movieReleaseYear,
                 overview));
             if (recommendations.Count == 3)
             {

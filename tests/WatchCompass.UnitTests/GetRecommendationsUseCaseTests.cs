@@ -31,6 +31,30 @@ public class GetRecommendationsUseCaseTests
     }
 
     [Test]
+    public async Task ForwardsReleaseYearToCatalogSearch()
+    {
+        var catalog = new FakeMovieCatalog
+        {
+            SearchResults = new[]
+            {
+                new MovieCard(1, "Comedy Pick", 100, new[] { "Comedy" })
+            }
+        };
+        var useCase = new GetRecommendationsUseCase(catalog);
+
+        var recommendations = await useCase.GetRecommendationsAsync(
+            Mood.FeelGood,
+            new TimeBudget(120),
+            "comedy",
+            Array.Empty<string>(),
+            2020);
+
+        recommendations.Count.ShouldBe(1);
+        catalog.ReleaseYears.ShouldBe(new int?[] { 2020 });
+        catalog.SearchPageSizes.ShouldBe(new[] { 20 });
+    }
+
+    [Test]
     public async Task FiltersOutMoviesExceedingBudget()
     {
         var catalog = new FakeMovieCatalog
@@ -116,6 +140,8 @@ public class GetRecommendationsUseCaseTests
     private sealed class FakeMovieCatalog : IMovieCatalog
     {
         public List<string> Queries { get; } = new();
+        public List<int?> ReleaseYears { get; } = new();
+        public List<int> SearchPageSizes { get; } = new();
 
         public IReadOnlyList<MovieCard> SearchResults { get; set; } = Array.Empty<MovieCard>();
 
@@ -139,7 +165,8 @@ public class GetRecommendationsUseCaseTests
         {
             cancellationToken.ThrowIfCancellationRequested();
             Queries.Add(query);
-            _ = releaseYear;
+            ReleaseYears.Add(releaseYear);
+            SearchPageSizes.Add(pageSize);
             var items = SearchResults
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)

@@ -26,6 +26,11 @@ public sealed record GetRecommendationsRequest
     public IReadOnlyList<string> AvoidGenres { get; init; } = Array.Empty<string>();
 
     /// <summary>
+    /// Optional release year filter applied to the recommendation source search.
+    /// </summary>
+    public int? ReleaseYear { get; init; }
+
+    /// <summary>
     /// ISO 3166-1 alpha-2 country code to localize availability and catalog sources.
     /// </summary>
     public required string CountryCode { get; init; } = string.Empty;

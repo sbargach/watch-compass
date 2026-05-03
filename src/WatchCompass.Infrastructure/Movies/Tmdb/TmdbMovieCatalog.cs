@@ -39,7 +39,11 @@ public sealed class TmdbMovieCatalog : IMovieCatalog
 
     public async Task<IReadOnlyList<MovieCard>> SearchAsync(string query, CancellationToken cancellationToken = default)
     {
-        var paged = await SearchPageAsync(query, page: 1, pageSize: TmdbSearchPageSize, cancellationToken: cancellationToken);
+        var paged = await SearchPageAsync(
+            query,
+            page: 1,
+            pageSize: TmdbSearchPageSize,
+            cancellationToken: cancellationToken);
         return paged.Items;
     }
 

@@ -25,6 +25,7 @@ export interface RecommendationsRequest {
   timeBudgetMinutes: number;
   query?: string;
   avoidGenres: string[];
+  releaseYear?: number;
   countryCode: string;
 }
 

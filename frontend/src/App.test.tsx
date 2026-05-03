@@ -188,6 +188,7 @@ describe("App", () => {
             timeBudgetMinutes: 95,
             query: "time loop",
             avoidGenres: ["Horror"],
+            releaseYear: 2020,
             countryCode: "US"
           })
         );
@@ -205,6 +206,7 @@ describe("App", () => {
     await screen.findByRole("button", { name: "Avoid genre Horror" });
 
     await userEvent.selectOptions(screen.getByLabelText("Watch region"), "US");
+    await userEvent.type(screen.getByLabelText("Release year"), "2020");
     await userEvent.clear(screen.getByLabelText("Time budget (minutes)"));
     await userEvent.type(screen.getByLabelText("Time budget (minutes)"), "95");
     await userEvent.type(screen.getByLabelText("Optional hint"), "time loop");
@@ -215,6 +217,50 @@ describe("App", () => {
     expect(screen.getByText("Palm Springs")).toBeInTheDocument();
     expect(screen.getByText("Matches the feel-good mood.")).toBeInTheDocument();
     expect(screen.getByText("Prime Video")).toBeInTheDocument();
+  });
+
+  it("hides stale recommendation results when the shared release year changes", async () => {
+    fetchMock.mockImplementation(async (input, init) => {
+      const url = String(input);
+
+      if (url.endsWith("/api/movies/trending?limit=12")) {
+        return createJsonResponse({ items: [trendingMovie] });
+      }
+
+      if (url.endsWith("/api/genres")) {
+        return createJsonResponse({ items: ["Comedy", "Horror", "Drama"] });
+      }
+
+      if (url.endsWith("/api/recommendations")) {
+        expect(init?.method).toBe("POST");
+        return createJsonResponse({ items: [recommendedMovie] });
+      }
+
+      throw new Error(`Unexpected fetch call: ${url}`);
+    });
+
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<App />);
+
+    await screen.findByRole("button", { name: "Avoid genre Horror" });
+
+    await userEvent.type(screen.getByLabelText("Release year"), "2020");
+    await userEvent.click(screen.getByRole("button", { name: "Get recommendations" }));
+
+    await screen.findByRole("heading", { name: "Recommendation Results" });
+    expect(screen.getByText("Palm Springs")).toBeInTheDocument();
+
+    const releaseYearInput = screen.getByLabelText("Release year");
+    await userEvent.clear(releaseYearInput);
+    await userEvent.type(releaseYearInput, "2021");
+
+    expect(screen.queryByRole("heading", { name: "Recommendation Results" })).not.toBeInTheDocument();
+    expect(screen.queryByText("Palm Springs")).not.toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledTimes(3);
+    });
   });
 
   it("loads genre discovery results and paginates them", async () => {
@@ -363,6 +409,7 @@ describe("App", () => {
 
     expect(screen.getByText("Use a four-digit release year.")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Search" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Get recommendations" })).toBeDisabled();
     expect(searchSummary?.textContent).toContain("Fix the release year to refresh results.");
     expect(screen.getByText(/Release year:/).textContent).toContain("Fix input.");
 

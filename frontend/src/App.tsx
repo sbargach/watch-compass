@@ -70,6 +70,7 @@ type RecommendationState = {
   isLoading: boolean;
   error: string | null;
   hasRequested: boolean;
+  appliedFilterKey: string | null;
 };
 
 type RecommendationFormState = {
@@ -116,6 +117,16 @@ function createInitialRecommendationFormState(): RecommendationFormState {
   };
 }
 
+function createInitialRecommendationState(): RecommendationState {
+  return {
+    items: [],
+    isLoading: false,
+    error: null,
+    hasRequested: false,
+    appliedFilterKey: null
+  };
+}
+
 function App() {
   const [queryInput, setQueryInput] = useState("");
   const [releaseYearInput, setReleaseYearInput] = useState("");
@@ -150,16 +161,16 @@ function App() {
   const [recommendationForm, setRecommendationForm] = useState<RecommendationFormState>(() =>
     createInitialRecommendationFormState()
   );
-  const [recommendationState, setRecommendationState] = useState<RecommendationState>({
-    items: [],
-    isLoading: false,
-    error: null,
-    hasRequested: false
-  });
+  const [recommendationState, setRecommendationState] = useState<RecommendationState>(() =>
+    createInitialRecommendationState()
+  );
   const releaseYearFieldState = getReleaseYearFieldState(releaseYearInput);
   const releaseYear = releaseYearFieldState.releaseYear;
   const releaseYearValidationMessage = releaseYearFieldState.validationMessage;
   const isReleaseYearValid = releaseYearValidationMessage === null;
+  const recommendationFilterKey = isReleaseYearValid
+    ? `valid:${releaseYear ?? "all"}`
+    : `invalid:${releaseYearInput.trim()}`;
 
   useEffect(() => {
     let isActive = true;
@@ -504,6 +515,7 @@ function App() {
 
   const handleRecommendationSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    const requestFilterKey = recommendationFilterKey;
 
     const parsedTimeBudget = Number.parseInt(recommendationForm.timeBudgetMinutes, 10);
     if (Number.isNaN(parsedTimeBudget) || parsedTimeBudget < 1 || parsedTimeBudget > 600) {
@@ -511,7 +523,19 @@ function App() {
         items: [],
         isLoading: false,
         error: "Time budget must be between 1 and 600 minutes.",
-        hasRequested: true
+        hasRequested: true,
+        appliedFilterKey: requestFilterKey
+      });
+      return;
+    }
+
+    if (releaseYearValidationMessage !== null) {
+      setRecommendationState({
+        items: [],
+        isLoading: false,
+        error: releaseYearValidationMessage,
+        hasRequested: true,
+        appliedFilterKey: requestFilterKey
       });
       return;
     }
@@ -521,6 +545,7 @@ function App() {
       timeBudgetMinutes: parsedTimeBudget,
       query: recommendationForm.query.trim() || undefined,
       avoidGenres: recommendationForm.avoidGenres,
+      releaseYear: releaseYear ?? undefined,
       countryCode: watchRegion
     };
 
@@ -529,7 +554,8 @@ function App() {
       items: [],
       isLoading: true,
       error: null,
-      hasRequested: true
+      hasRequested: true,
+      appliedFilterKey: requestFilterKey
     });
 
     try {
@@ -538,14 +564,16 @@ function App() {
         items: response.items,
         isLoading: false,
         error: null,
-        hasRequested: true
+        hasRequested: true,
+        appliedFilterKey: requestFilterKey
       });
     } catch (error) {
       setRecommendationState({
         items: [],
         isLoading: false,
         error: toErrorMessage(error),
-        hasRequested: true
+        hasRequested: true,
+        appliedFilterKey: requestFilterKey
       });
     }
   };
@@ -553,7 +581,8 @@ function App() {
   const hasSearch = activeQuery.length > 0;
   const hasSearchResults = (searchState.result?.items.length ?? 0) > 0;
   const hasDiscoverResults = (discoverState.result?.items.length ?? 0) > 0;
-  const hasRecommendations = recommendationState.items.length > 0;
+  const recommendationStateMatchesFilter = recommendationState.appliedFilterKey === recommendationFilterKey;
+  const hasRecommendations = recommendationStateMatchesFilter && recommendationState.items.length > 0;
 
   return (
     <div className="app-shell">
@@ -670,6 +699,11 @@ function App() {
               <p className="field-note">{watchRegionLabel} from the main toolbar.</p>
             </div>
 
+            <div className="field">
+              <span>Release year</span>
+              <p className="field-note">{releaseYearFieldState.statusLabel} from the main toolbar.</p>
+            </div>
+
             <label className="field field-wide">
               <span>Optional hint</span>
               <input
@@ -722,15 +756,23 @@ function App() {
             </div>
 
             <div className="recommendation-actions">
-              <button type="submit" disabled={recommendationState.isLoading}>
+              <button type="submit" disabled={recommendationState.isLoading || !isReleaseYearValid}>
                 {recommendationState.isLoading ? "Curating..." : "Get recommendations"}
               </button>
             </div>
           </form>
 
-          {recommendationState.error && <p className="status-text status-error">{recommendationState.error}</p>}
-          {recommendationState.isLoading && <p className="status-text">Loading recommendations...</p>}
-          {recommendationState.hasRequested && !recommendationState.isLoading && !recommendationState.error && !hasRecommendations && (
+          {recommendationStateMatchesFilter && recommendationState.error && (
+            <p className="status-text status-error">{recommendationState.error}</p>
+          )}
+          {recommendationStateMatchesFilter && recommendationState.isLoading && (
+            <p className="status-text">Loading recommendations...</p>
+          )}
+          {recommendationStateMatchesFilter &&
+            recommendationState.hasRequested &&
+            !recommendationState.isLoading &&
+            !recommendationState.error &&
+            !hasRecommendations && (
             <p className="status-text">No recommendations matched the current filters.</p>
           )}
 

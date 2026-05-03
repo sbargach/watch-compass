@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using WatchCompass.Api.Api.Validation;
 using WatchCompass.Application.Dtos;
 using WatchCompass.Application.UseCases.DiscoverMovies;
 using WatchCompass.Application.UseCases.MovieDetails;
@@ -16,7 +17,6 @@ public sealed class SearchController : ControllerBase
     private const int DefaultSearchPage = 1;
     private const int DefaultSearchPageSize = 10;
     private const int MaxSearchPageSize = 50;
-    private const int MinReleaseYear = 1888;
 
     private readonly SearchMoviesUseCase _searchMoviesUseCase;
     private readonly DiscoverMoviesByGenreUseCase _discoverMoviesByGenreUseCase;
@@ -218,27 +218,6 @@ public sealed class SearchController : ControllerBase
             StatusCode = details.Status
         };
     }
-
-    private static ProblemDetails? ValidateReleaseYear(int? releaseYear)
-    {
-        if (releaseYear is null)
-        {
-            return null;
-        }
-
-        var maxReleaseYear = DateTime.UtcNow.Year + 1;
-        if (releaseYear.Value >= MinReleaseYear && releaseYear.Value <= maxReleaseYear)
-        {
-            return null;
-        }
-
-        return new ProblemDetails
-        {
-            Status = StatusCodes.Status400BadRequest,
-            Title = $"ReleaseYear must be between {MinReleaseYear} and {maxReleaseYear}."
-        };
-    }
-
     private static ProblemDetails? ValidatePagedRequest(
         int? page,
         int? pageSize,
@@ -267,6 +246,6 @@ public sealed class SearchController : ControllerBase
             };
         }
 
-        return ValidateReleaseYear(releaseYear);
+        return ReleaseYearValidation.Validate(releaseYear);
     }
 }

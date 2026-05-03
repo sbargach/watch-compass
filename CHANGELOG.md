@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.18.0] - 2026-05-03
+### Added
+- Recommendation requests now support an optional `releaseYear` filter across the API and frontend.
+
+### Fixed
+- Recommendation results now hide immediately when the shared release-year filter changes.
+
+### Changed
+- Recommendation release-year filtering now reuses the paged catalog search path, keeping `IMovieCatalog` narrower.
+- Updated OpenTelemetry packages so restore and test runs stay clean after the `GHSA-g94r-2vxg-569j` advisory.
+
 ## [0.17.0] - 2026-04-06
 ### Added
 - Optional `releaseYear` filter on `GET /api/movies/search` and `GET /api/movies/discover`, including API validation, TMDB query forwarding, cache-key separation, and backend regression coverage.

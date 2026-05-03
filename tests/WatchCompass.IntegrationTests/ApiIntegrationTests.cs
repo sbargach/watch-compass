@@ -240,7 +240,7 @@ public class ApiIntegrationTests
           ]
         }
         """;
-        StubSearch("matrix", searchBody);
+        StubSearch("matrix", searchBody, releaseYear: 2019);
 
         var providersBody = """
         {
@@ -264,6 +264,7 @@ public class ApiIntegrationTests
             timeBudgetMinutes = 120,
             query = "matrix",
             avoidGenres = Array.Empty<string>(),
+            releaseYear = 2019,
             countryCode = "US"
         };
 
@@ -369,6 +370,26 @@ public class ApiIntegrationTests
         var title = document.RootElement.GetProperty("title").GetString();
         title.ShouldNotBeNull();
         title!.ToLowerInvariant().ShouldContain("time budget");
+    }
+
+    [Test]
+    public async Task RecommendationsEndpoint_WithInvalidReleaseYear_ReturnsProblemDetails()
+    {
+        var payload = new
+        {
+            mood = "Chill",
+            timeBudgetMinutes = 120,
+            releaseYear = 1700,
+            countryCode = "US"
+        };
+
+        var response = await _client.PostAsJsonAsync("/api/recommendations", payload);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var title = document.RootElement.GetProperty("title").GetString();
+        title.ShouldNotBeNull();
+        title!.ToLowerInvariant().ShouldContain("releaseyear");
     }
 
     [Test]

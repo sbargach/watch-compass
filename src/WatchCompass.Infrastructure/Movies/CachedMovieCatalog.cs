@@ -28,7 +28,11 @@ public sealed class CachedMovieCatalog : IMovieCatalog
 
     public async Task<IReadOnlyList<MovieCard>> SearchAsync(string query, CancellationToken cancellationToken = default)
     {
-        var paged = await SearchPageAsync(query, DefaultSearchPage, DefaultSearchPageSize, cancellationToken: cancellationToken);
+        var paged = await SearchPageAsync(
+            query,
+            DefaultSearchPage,
+            DefaultSearchPageSize,
+            cancellationToken: cancellationToken);
         return paged.Items;
     }
 

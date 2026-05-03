@@ -21,7 +21,7 @@
 - Infrastructure: TMDB-backed `IMovieCatalog` using `HttpClientFactory`, options, retries, and provider mapping.
 - API: ASP.NET Core entrypoint, DI wiring, controllers, middleware, and telemetry.
 - Caching: in-memory decorator on TMDB catalog (configurable via `Caching:MovieCatalog`).
-- Frontend: React + TypeScript + Vite client (`frontend/`) consuming trending, paginated search, genre discovery, recommendations, movie details, similar-title endpoints, and shared release-year filtering for browse flows.
+- Frontend: React + TypeScript + Vite client (`frontend/`) consuming trending, paginated search, genre discovery, recommendations, movie details, similar-title endpoints, and shared release-year filtering across browse and recommendation flows.
 
 ## API surface
 - `GET /api/movies/search?query=...&page=1&pageSize=10&releaseYear=2016` - find movies by query with paged results, optionally narrowed to a specific release year (`pageSize` max 50).
@@ -29,5 +29,5 @@
 - `GET /api/movies/trending?limit=...` - fetch today's trending movies (limit defaults to 10, max 50).
 - `GET /api/movies/{movieId}?countryCode=XX` - fetch details and available providers for a movie.
 - `GET /api/movies/{movieId}/similar` - fetch similar movies for a given title.
-- `POST /api/recommendations` - generate recommendations based on mood, time budget, and optional query/avoids.
+- `POST /api/recommendations` - generate recommendations based on mood, time budget, and optional query/avoids/release year.
 - Swagger UI available at `/swagger` (XML comments enabled).

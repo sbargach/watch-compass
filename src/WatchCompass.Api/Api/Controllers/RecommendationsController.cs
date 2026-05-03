@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using WatchCompass.Api.Api.Validation;
 using WatchCompass.Application.Abstractions.Movies;
 using WatchCompass.Application.UseCases.Recommendations;
 using WatchCompass.Contracts;
@@ -54,6 +55,12 @@ public sealed class RecommendationsController : ControllerBase
             });
         }
 
+        var releaseYearProblem = ReleaseYearValidation.Validate(request.ReleaseYear);
+        if (releaseYearProblem is not null)
+        {
+            return ToProblem(releaseYearProblem);
+        }
+
         var timeBudget = new TimeBudget(request.TimeBudgetMinutes);
         var countryCode = request.CountryCode ?? string.Empty;
 
@@ -62,6 +69,7 @@ public sealed class RecommendationsController : ControllerBase
             timeBudget,
             request.Query,
             avoidGenres,
+            request.ReleaseYear,
             cancellationToken);
 
         var providersByMovie = new Dictionary<int, IReadOnlyList<string>>();
