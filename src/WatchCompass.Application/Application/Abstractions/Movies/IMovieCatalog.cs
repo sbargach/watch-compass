@@ -29,4 +29,6 @@ public interface IMovieCatalog
     Task<IReadOnlyList<MovieCard>> GetSimilarAsync(int movieId, CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<MovieCard>> GetTrendingAsync(CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<MovieCard>> GetNowPlayingAsync(CancellationToken cancellationToken = default);
 }

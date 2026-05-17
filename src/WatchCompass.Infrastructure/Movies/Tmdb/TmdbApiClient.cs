@@ -19,6 +19,8 @@ public interface ITmdbApiClient
     Task<TmdbSearchResponse> GetSimilarMoviesAsync(int movieId, CancellationToken cancellationToken = default);
 
     Task<TmdbSearchResponse> GetTrendingMoviesAsync(CancellationToken cancellationToken = default);
+
+    Task<TmdbSearchResponse> GetNowPlayingMoviesAsync(CancellationToken cancellationToken = default);
 }
 
 public sealed class TmdbApiClient : ITmdbApiClient
@@ -142,6 +144,20 @@ public sealed class TmdbApiClient : ITmdbApiClient
                 new Dictionary<string, string?>
                 {
                     ["language"] = _options.Language
+                });
+        }, cancellationToken);
+    }
+
+    public Task<TmdbSearchResponse> GetNowPlayingMoviesAsync(CancellationToken cancellationToken = default)
+    {
+        return _executor.SendAsync<TmdbSearchResponse>(() =>
+        {
+            return BuildRequest(
+                "movie/now_playing",
+                new Dictionary<string, string?>
+                {
+                    ["language"] = _options.Language,
+                    ["region"] = NormalizeCountry(_options.DefaultCountryCode)
                 });
         }, cancellationToken);
     }

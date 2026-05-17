@@ -1,0 +1,24 @@
+{
+  "page": 1,
+  "results": [
+    {
+      "id": 601,
+      "title": "Now Playing Headliner",
+      "runtime": 123,
+      "genre_ids": [28, 18],
+      "poster_path": "/poster-601.jpg",
+      "backdrop_path": "/backdrop-601.jpg",
+      "release_date": "2026-05-14",
+      "overview": "The biggest movie in theaters this week."
+    },
+    {
+      "id": 602,
+      "title": "Second Screening",
+      "genre_ids": [35],
+      "poster_path": "/poster-602.jpg",
+      "backdrop_path": null,
+      "release_date": "2026-05-10",
+      "overview": " "
+    }
+  ]
+}

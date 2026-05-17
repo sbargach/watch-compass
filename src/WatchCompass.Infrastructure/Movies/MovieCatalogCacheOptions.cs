@@ -16,6 +16,8 @@ public sealed class MovieCatalogCacheOptions
 
     public int TrendingMinutes { get; set; } = 15;
 
+    public int NowPlayingMinutes { get; set; } = 15;
+
     internal TimeSpan SearchDuration => TimeSpan.FromMinutes(Math.Max(0, SearchMinutes));
 
     internal TimeSpan DiscoverDuration => TimeSpan.FromMinutes(Math.Max(0, DiscoverMinutes));
@@ -29,4 +31,6 @@ public sealed class MovieCatalogCacheOptions
     internal TimeSpan SimilarDuration => TimeSpan.FromMinutes(Math.Max(0, SimilarMinutes));
 
     internal TimeSpan TrendingDuration => TimeSpan.FromMinutes(Math.Max(0, TrendingMinutes));
+
+    internal TimeSpan NowPlayingDuration => TimeSpan.FromMinutes(Math.Max(0, NowPlayingMinutes));
 }

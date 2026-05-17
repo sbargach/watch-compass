@@ -3,15 +3,15 @@ using Shouldly;
 using System.Linq;
 using WatchCompass.Application.Abstractions.Movies;
 using WatchCompass.Application.Dtos;
-using WatchCompass.Application.UseCases.TrendingMovies;
+using WatchCompass.Application.UseCases.NowPlayingMovies;
 
 namespace WatchCompass.UnitTests;
 
 [TestFixture]
-public class GetTrendingMoviesUseCaseTests
+public class GetNowPlayingMoviesUseCaseTests
 {
     [Test]
-    public async Task ReturnsLimitedTrendingMovies()
+    public async Task ReturnsLimitedNowPlayingMovies()
     {
         var movies = new[]
         {
@@ -19,8 +19,8 @@ public class GetTrendingMoviesUseCaseTests
             new MovieCard(2, "Second", 95, Array.Empty<string>()),
             new MovieCard(3, "Third", 90, Array.Empty<string>())
         };
-        var catalog = new FakeTrendingCatalog(movies);
-        var useCase = new GetTrendingMoviesUseCase(catalog);
+        var catalog = new FakeNowPlayingCatalog(movies);
+        var useCase = new GetNowPlayingMoviesUseCase(catalog);
 
         var results = await useCase.GetAsync(2);
 
@@ -30,28 +30,28 @@ public class GetTrendingMoviesUseCaseTests
     [Test]
     public async Task ThrowsWhenLimitIsNonPositive()
     {
-        var catalog = new FakeTrendingCatalog(Array.Empty<MovieCard>());
-        var useCase = new GetTrendingMoviesUseCase(catalog);
+        var catalog = new FakeNowPlayingCatalog(Array.Empty<MovieCard>());
+        var useCase = new GetNowPlayingMoviesUseCase(catalog);
 
         await Should.ThrowAsync<ArgumentOutOfRangeException>(() => useCase.GetAsync(0));
     }
 
-    private sealed class FakeTrendingCatalog : IMovieCatalog
+    private sealed class FakeNowPlayingCatalog : IMovieCatalog
     {
         private readonly IReadOnlyList<MovieCard> _movies;
 
-        public FakeTrendingCatalog(IReadOnlyList<MovieCard> movies)
+        public FakeNowPlayingCatalog(IReadOnlyList<MovieCard> movies)
         {
             _movies = movies;
         }
 
-        public Task<IReadOnlyList<MovieCard>> GetTrendingAsync(CancellationToken cancellationToken = default)
+        public Task<IReadOnlyList<MovieCard>> GetNowPlayingAsync(CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
             return Task.FromResult(_movies);
         }
 
-        public Task<IReadOnlyList<MovieCard>> GetNowPlayingAsync(CancellationToken cancellationToken = default)
+        public Task<IReadOnlyList<MovieCard>> GetTrendingAsync(CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
             throw new NotImplementedException();

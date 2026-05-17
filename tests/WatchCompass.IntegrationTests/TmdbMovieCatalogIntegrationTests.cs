@@ -224,6 +224,32 @@ public class TmdbMovieCatalogIntegrationTests
         results[1].ReleaseYear.ShouldBe(2023);
     }
 
+    [Test]
+    public async Task GetNowPlayingAsync_ReturnsMappedResults()
+    {
+        StubGenres("genres.json");
+        StubNowPlaying("now-playing.json");
+
+        using var httpClient = CreateHttpClient();
+        var catalog = CreateCatalog(httpClient);
+
+        var results = await catalog.GetNowPlayingAsync();
+
+        results.Count.ShouldBe(2);
+        results[0].MovieId.ShouldBe(601);
+        results[0].Title.ShouldBe("Now Playing Headliner");
+        results[0].Genres.ShouldBe(new[] { "Action", "Drama" });
+        results[0].RuntimeMinutes.ShouldBe(123);
+        results[0].PosterUrl.ShouldBe("https://image.tmdb.org/t/p/w500/poster-601.jpg");
+        results[0].BackdropUrl.ShouldBe("https://image.tmdb.org/t/p/w780/backdrop-601.jpg");
+        results[0].ReleaseYear.ShouldBe(2026);
+        results[0].Overview.ShouldBe("The biggest movie in theaters this week.");
+        results[1].MovieId.ShouldBe(602);
+        results[1].Genres.ShouldBe(new[] { "Comedy" });
+        results[1].ReleaseYear.ShouldBe(2026);
+        results[1].Overview.ShouldBeNull();
+    }
+
     private void StubSearch(string query, string fixtureName, int tmdbPage = 1, int? releaseYear = null)
     {
         var request = Request.Create()
@@ -321,6 +347,19 @@ public class TmdbMovieCatalogIntegrationTests
         _server.Given(Request.Create()
                 .WithPath("/3/trending/movie/day")
                 .WithParam("language", _options.Language)
+                .UsingGet())
+            .RespondWith(Response.Create()
+                .WithStatusCode((int)HttpStatusCode.OK)
+                .WithHeader("Content-Type", "application/json")
+                .WithBodyFromFile(GetFixturePath(fixtureName)));
+    }
+
+    private void StubNowPlaying(string fixtureName)
+    {
+        _server.Given(Request.Create()
+                .WithPath("/3/movie/now_playing")
+                .WithParam("language", _options.Language)
+                .WithParam("region", _options.DefaultCountryCode)
                 .UsingGet())
             .RespondWith(Response.Create()
                 .WithStatusCode((int)HttpStatusCode.OK)

@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.19.0] - 2026-05-17
+### Added
+- Added a backend-backed `Now Playing` movie feed and surfaced it in the frontend home view.
+
+### Fixed
+- Recommendation results now hide when any recommendation input changes, and feed endpoints no longer overstate their supported `limit`.
+
+### Changed
+- Reused the shared movie card and details flow for now playing titles.
+
 ## [0.18.0] - 2026-05-03
 ### Added
 - Recommendation requests now support an optional `releaseYear` filter across the API and frontend.

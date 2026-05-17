@@ -17,6 +17,7 @@ public sealed class CachedMovieCatalog : IMovieCatalog
     private readonly ILogger<CachedMovieCatalog> _logger;
     private const string GenresKey = "genres";
     private const string TrendingKey = "trending";
+    private const string NowPlayingKey = "now-playing";
 
     public CachedMovieCatalog(IMovieCatalog inner, IMemoryCache cache, IOptions<MovieCatalogCacheOptions> options, ILogger<CachedMovieCatalog> logger)
     {
@@ -166,6 +167,18 @@ public sealed class CachedMovieCatalog : IMovieCatalog
 
         var results = await _inner.GetTrendingAsync(cancellationToken);
         return CacheOrReturn(TrendingKey, results, _options.TrendingDuration);
+    }
+
+    public async Task<IReadOnlyList<MovieCard>> GetNowPlayingAsync(CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        if (_cache.TryGetValue(NowPlayingKey, out IReadOnlyList<MovieCard>? cached) && cached is not null)
+        {
+            return cached;
+        }
+
+        var results = await _inner.GetNowPlayingAsync(cancellationToken);
+        return CacheOrReturn(NowPlayingKey, results, _options.NowPlayingDuration);
     }
 
     private T CacheOrReturn<T>(string key, T value, TimeSpan duration)

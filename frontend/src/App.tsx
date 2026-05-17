@@ -4,6 +4,7 @@ import {
   getApiBaseUrl,
   getGenres,
   getMovieDetails,
+  getNowPlayingMovies,
   getRecommendations,
   getSimilarMovies,
   getTrendingMovies,
@@ -24,6 +25,7 @@ import type {
 
 const RESULTS_PAGE_SIZE = 12;
 const TRENDING_LIMIT = 12;
+const NOW_PLAYING_LIMIT = 12;
 const MOODS: readonly Mood[] = ["FeelGood", "Chill", "Intense", "Scary"];
 const DEFAULT_WATCH_REGION = "NL";
 const MIN_RELEASE_YEAR = 1888;
@@ -70,7 +72,7 @@ type RecommendationState = {
   isLoading: boolean;
   error: string | null;
   hasRequested: boolean;
-  appliedFilterKey: string | null;
+  appliedRequestKey: string | null;
 };
 
 type RecommendationFormState = {
@@ -123,7 +125,7 @@ function createInitialRecommendationState(): RecommendationState {
     isLoading: false,
     error: null,
     hasRequested: false,
-    appliedFilterKey: null
+    appliedRequestKey: null
   };
 }
 
@@ -134,6 +136,11 @@ function App() {
   const [searchPage, setSearchPage] = useState(1);
   const [searchNonce, setSearchNonce] = useState(0);
   const [trendingState, setTrendingState] = useState<TrendingState>({
+    items: [],
+    isLoading: true,
+    error: null
+  });
+  const [nowPlayingState, setNowPlayingState] = useState<TrendingState>({
     items: [],
     isLoading: true,
     error: null
@@ -168,9 +175,12 @@ function App() {
   const releaseYear = releaseYearFieldState.releaseYear;
   const releaseYearValidationMessage = releaseYearFieldState.validationMessage;
   const isReleaseYearValid = releaseYearValidationMessage === null;
-  const recommendationFilterKey = isReleaseYearValid
-    ? `valid:${releaseYear ?? "all"}`
-    : `invalid:${releaseYearInput.trim()}`;
+  const recommendationRequestKey = getRecommendationRequestKey(
+    recommendationForm,
+    watchRegion,
+    releaseYearInput,
+    releaseYearFieldState
+  );
 
   useEffect(() => {
     let isActive = true;
@@ -200,6 +210,40 @@ function App() {
     };
 
     void loadTrending();
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let isActive = true;
+    const loadNowPlaying = async () => {
+      try {
+        const response = await getNowPlayingMovies(NOW_PLAYING_LIMIT);
+        if (!isActive) {
+          return;
+        }
+
+        setNowPlayingState({
+          items: response.items,
+          isLoading: false,
+          error: null
+        });
+      } catch (error) {
+        if (!isActive) {
+          return;
+        }
+
+        setNowPlayingState({
+          items: [],
+          isLoading: false,
+          error: toErrorMessage(error)
+        });
+      }
+    };
+
+    void loadNowPlaying();
 
     return () => {
       isActive = false;
@@ -515,7 +559,7 @@ function App() {
 
   const handleRecommendationSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const requestFilterKey = recommendationFilterKey;
+    const requestKey = recommendationRequestKey;
 
     const parsedTimeBudget = Number.parseInt(recommendationForm.timeBudgetMinutes, 10);
     if (Number.isNaN(parsedTimeBudget) || parsedTimeBudget < 1 || parsedTimeBudget > 600) {
@@ -524,7 +568,7 @@ function App() {
         isLoading: false,
         error: "Time budget must be between 1 and 600 minutes.",
         hasRequested: true,
-        appliedFilterKey: requestFilterKey
+        appliedRequestKey: requestKey
       });
       return;
     }
@@ -535,7 +579,7 @@ function App() {
         isLoading: false,
         error: releaseYearValidationMessage,
         hasRequested: true,
-        appliedFilterKey: requestFilterKey
+        appliedRequestKey: requestKey
       });
       return;
     }
@@ -555,7 +599,7 @@ function App() {
       isLoading: true,
       error: null,
       hasRequested: true,
-      appliedFilterKey: requestFilterKey
+      appliedRequestKey: requestKey
     });
 
     try {
@@ -565,7 +609,7 @@ function App() {
         isLoading: false,
         error: null,
         hasRequested: true,
-        appliedFilterKey: requestFilterKey
+        appliedRequestKey: requestKey
       });
     } catch (error) {
       setRecommendationState({
@@ -573,7 +617,7 @@ function App() {
         isLoading: false,
         error: toErrorMessage(error),
         hasRequested: true,
-        appliedFilterKey: requestFilterKey
+        appliedRequestKey: requestKey
       });
     }
   };
@@ -581,8 +625,8 @@ function App() {
   const hasSearch = activeQuery.length > 0;
   const hasSearchResults = (searchState.result?.items.length ?? 0) > 0;
   const hasDiscoverResults = (discoverState.result?.items.length ?? 0) > 0;
-  const recommendationStateMatchesFilter = recommendationState.appliedFilterKey === recommendationFilterKey;
-  const hasRecommendations = recommendationStateMatchesFilter && recommendationState.items.length > 0;
+  const recommendationStateMatchesRequest = recommendationState.appliedRequestKey === recommendationRequestKey;
+  const hasRecommendations = recommendationStateMatchesRequest && recommendationState.items.length > 0;
 
   return (
     <div className="app-shell">
@@ -762,13 +806,13 @@ function App() {
             </div>
           </form>
 
-          {recommendationStateMatchesFilter && recommendationState.error && (
+          {recommendationStateMatchesRequest && recommendationState.error && (
             <p className="status-text status-error">{recommendationState.error}</p>
           )}
-          {recommendationStateMatchesFilter && recommendationState.isLoading && (
+          {recommendationStateMatchesRequest && recommendationState.isLoading && (
             <p className="status-text">Loading recommendations...</p>
           )}
-          {recommendationStateMatchesFilter &&
+          {recommendationStateMatchesRequest &&
             recommendationState.hasRequested &&
             !recommendationState.isLoading &&
             !recommendationState.error &&
@@ -905,6 +949,28 @@ function App() {
         {!hasSearch && (
           <section className="content-section">
             <div className="section-heading">
+              <h2>Now Playing</h2>
+              <p>Movies currently in theaters from the TMDB-backed API. Select a card to open details and similar titles.</p>
+            </div>
+
+            {nowPlayingState.isLoading && <p className="status-text">Loading now playing movies...</p>}
+            {nowPlayingState.error && <p className="status-text status-error">{nowPlayingState.error}</p>}
+            {!nowPlayingState.isLoading && !nowPlayingState.error && nowPlayingState.items.length === 0 && (
+              <p className="status-text">No now playing movies were returned.</p>
+            )}
+            {nowPlayingState.items.length > 0 && (
+              <MovieGrid
+                movies={nowPlayingState.items}
+                onSelectMovie={handleSelectMovie}
+                selectedMovieId={selectedMovie?.movieId}
+              />
+            )}
+          </section>
+        )}
+
+        {!hasSearch && (
+          <section className="content-section">
+            <div className="section-heading">
               <h2>Trending Today</h2>
               <p>Fresh picks from the TMDB-backed API. Select a card to open details and similar titles.</p>
             </div>
@@ -1001,6 +1067,30 @@ function toErrorMessage(error: unknown): string {
   }
 
   return "Unexpected error while calling the API.";
+}
+
+function getRecommendationRequestKey(
+  form: RecommendationFormState,
+  watchRegion: string,
+  releaseYearInput: string,
+  releaseYearFieldState: ReleaseYearFieldState
+): string {
+  const normalizedAvoidGenres = [...form.avoidGenres]
+    .map((genre) => genre.trim())
+    .filter((genre) => genre.length > 0)
+    .sort((left, right) => left.localeCompare(right));
+  const releaseYearKey = releaseYearFieldState.validationMessage === null
+    ? `valid:${releaseYearFieldState.releaseYear ?? "all"}`
+    : `invalid:${releaseYearInput.trim()}`;
+
+  return [
+    `mood:${form.mood}`,
+    `budget:${form.timeBudgetMinutes.trim()}`,
+    `query:${form.query.trim()}`,
+    `avoid:${normalizedAvoidGenres.join(",")}`,
+    `country:${watchRegion}`,
+    `releaseYear:${releaseYearKey}`
+  ].join("|");
 }
 
 function getReleaseYearFieldState(input: string): ReleaseYearFieldState {

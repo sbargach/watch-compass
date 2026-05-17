@@ -451,6 +451,45 @@ public class ApiIntegrationTests
         items[0].GetProperty("releaseYear").GetInt32().ShouldBe(2024);
     }
 
+    [Test]
+    public async Task TrendingMoviesEndpoint_WithLimitAboveTwenty_ReturnsProblemDetails()
+    {
+        var response = await _client.GetAsync("/api/movies/trending?limit=21");
+
+        response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        document.RootElement.GetProperty("title").GetString().ShouldBe("Limit must be between 1 and 20.");
+    }
+
+    [Test]
+    public async Task NowPlayingMoviesEndpoint_ReturnsLimitedItems()
+    {
+        StubGenres(LoadFixture("genres.json"));
+        StubNowPlaying(LoadFixture("now-playing.json"));
+
+        var response = await _client.GetAsync("/api/movies/now-playing?limit=1");
+
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var items = document.RootElement.GetProperty("items");
+        items.ValueKind.ShouldBe(JsonValueKind.Array);
+        items.GetArrayLength().ShouldBe(1);
+        items[0].GetProperty("movieId").GetInt32().ShouldBe(601);
+        items[0].GetProperty("genres").EnumerateArray().Select(e => e.GetString()).ShouldContain("Action");
+        items[0].GetProperty("runtimeMinutes").GetInt32().ShouldBe(123);
+        items[0].GetProperty("releaseYear").GetInt32().ShouldBe(2026);
+    }
+
+    [Test]
+    public async Task NowPlayingMoviesEndpoint_WithLimitAboveTwenty_ReturnsProblemDetails()
+    {
+        var response = await _client.GetAsync("/api/movies/now-playing?limit=21");
+
+        response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        document.RootElement.GetProperty("title").GetString().ShouldBe("Limit must be between 1 and 20.");
+    }
+
     private void StubSearch(string query, string body, int tmdbPage = 1, int? releaseYear = null)
     {
         var request = Request.Create()
@@ -539,6 +578,19 @@ public class ApiIntegrationTests
                 .UsingGet()
                 .WithPath("/3/trending/movie/day")
                 .WithParam("language", "en-US"))
+            .RespondWith(Response.Create()
+                .WithStatusCode((int)HttpStatusCode.OK)
+                .WithHeader("Content-Type", "application/json")
+                .WithBody(body));
+    }
+
+    private void StubNowPlaying(string body)
+    {
+        _server.Given(Request.Create()
+                .UsingGet()
+                .WithPath("/3/movie/now_playing")
+                .WithParam("language", "en-US")
+                .WithParam("region", "US"))
             .RespondWith(Response.Create()
                 .WithStatusCode((int)HttpStatusCode.OK)
                 .WithHeader("Content-Type", "application/json")

@@ -70,6 +70,17 @@ const searchMovie = {
   overview: "A linguist works to understand a new visitor."
 };
 
+const nowPlayingMovie = {
+  movieId: 6,
+  title: "Mission: Midnight",
+  runtimeMinutes: 128,
+  genres: ["Action", "Thriller"],
+  posterUrl: "https://image.tmdb.org/t/p/w500/mission-midnight.jpg",
+  backdropUrl: "https://image.tmdb.org/t/p/original/mission-midnight-backdrop.jpg",
+  releaseYear: 2026,
+  overview: "An elite crew races to stop a midnight launch."
+};
+
 const fetchMock = vi.fn<typeof fetch>();
 
 describe("App", () => {
@@ -85,6 +96,10 @@ describe("App", () => {
 
       if (url.endsWith("/api/movies/trending?limit=12")) {
         return createJsonResponse({ items: [trendingMovie] });
+      }
+
+      if (url.endsWith("/api/movies/now-playing?limit=12")) {
+        return createJsonResponse({ items: [nowPlayingMovie] });
       }
 
       if (url.endsWith("/api/genres")) {
@@ -111,12 +126,12 @@ describe("App", () => {
 
     await screen.findByText("Where to watch in Netherlands (NL)");
     expect(screen.getByText("Videoland")).toBeInTheDocument();
-    expect(fetchMock).toHaveBeenCalledTimes(4);
+    expect(fetchMock).toHaveBeenCalledTimes(5);
 
     await userEvent.click(selectMovieButton);
 
     await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledTimes(4);
+      expect(fetchMock).toHaveBeenCalledTimes(5);
     });
 
     expect(screen.queryByText("Loading movie details...")).not.toBeInTheDocument();
@@ -129,6 +144,10 @@ describe("App", () => {
 
       if (url.endsWith("/api/movies/trending?limit=12")) {
         return createJsonResponse({ items: [trendingMovie] });
+      }
+
+      if (url.endsWith("/api/movies/now-playing?limit=12")) {
+        return createJsonResponse({ items: [nowPlayingMovie] });
       }
 
       if (url.endsWith("/api/genres")) {
@@ -164,8 +183,35 @@ describe("App", () => {
     expect(screen.queryByText("Videoland")).not.toBeInTheDocument();
 
     await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledTimes(5);
+      expect(fetchMock).toHaveBeenCalledTimes(6);
     });
+  });
+
+  it("renders the now playing section from the backend", async () => {
+    fetchMock.mockImplementation(async (input) => {
+      const url = String(input);
+
+      if (url.endsWith("/api/movies/trending?limit=12")) {
+        return createJsonResponse({ items: [trendingMovie] });
+      }
+
+      if (url.endsWith("/api/movies/now-playing?limit=12")) {
+        return createJsonResponse({ items: [nowPlayingMovie] });
+      }
+
+      if (url.endsWith("/api/genres")) {
+        return createJsonResponse({ items: ["Comedy", "Horror", "Drama"] });
+      }
+
+      throw new Error(`Unexpected fetch call: ${url}`);
+    });
+
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<App />);
+
+    await screen.findByRole("heading", { name: "Now Playing" });
+    expect(screen.getByRole("heading", { name: "Mission: Midnight" })).toBeInTheDocument();
   });
 
   it("submits the recommendation form and renders recommendation results", async () => {
@@ -174,6 +220,10 @@ describe("App", () => {
 
       if (url.endsWith("/api/movies/trending?limit=12")) {
         return createJsonResponse({ items: [trendingMovie] });
+      }
+
+      if (url.endsWith("/api/movies/now-playing?limit=12")) {
+        return createJsonResponse({ items: [nowPlayingMovie] });
       }
 
       if (url.endsWith("/api/genres")) {
@@ -227,6 +277,10 @@ describe("App", () => {
         return createJsonResponse({ items: [trendingMovie] });
       }
 
+      if (url.endsWith("/api/movies/now-playing?limit=12")) {
+        return createJsonResponse({ items: [nowPlayingMovie] });
+      }
+
       if (url.endsWith("/api/genres")) {
         return createJsonResponse({ items: ["Comedy", "Horror", "Drama"] });
       }
@@ -259,7 +313,52 @@ describe("App", () => {
     expect(screen.queryByText("Palm Springs")).not.toBeInTheDocument();
 
     await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledTimes(3);
+      expect(fetchMock).toHaveBeenCalledTimes(4);
+    });
+  });
+
+  it("hides stale recommendation results when the watch region changes", async () => {
+    fetchMock.mockImplementation(async (input, init) => {
+      const url = String(input);
+
+      if (url.endsWith("/api/movies/trending?limit=12")) {
+        return createJsonResponse({ items: [trendingMovie] });
+      }
+
+      if (url.endsWith("/api/movies/now-playing?limit=12")) {
+        return createJsonResponse({ items: [nowPlayingMovie] });
+      }
+
+      if (url.endsWith("/api/genres")) {
+        return createJsonResponse({ items: ["Comedy", "Horror", "Drama"] });
+      }
+
+      if (url.endsWith("/api/recommendations")) {
+        expect(init?.method).toBe("POST");
+        return createJsonResponse({ items: [recommendedMovie] });
+      }
+
+      throw new Error(`Unexpected fetch call: ${url}`);
+    });
+
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<App />);
+
+    await screen.findByRole("button", { name: "Avoid genre Horror" });
+
+    await userEvent.click(screen.getByRole("button", { name: "Get recommendations" }));
+
+    await screen.findByRole("heading", { name: "Recommendation Results" });
+    expect(screen.getByText("Palm Springs")).toBeInTheDocument();
+
+    await userEvent.selectOptions(screen.getByLabelText("Watch region"), "US");
+
+    expect(screen.queryByRole("heading", { name: "Recommendation Results" })).not.toBeInTheDocument();
+    expect(screen.queryByText("Palm Springs")).not.toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledTimes(4);
     });
   });
 
@@ -269,6 +368,10 @@ describe("App", () => {
 
       if (url.endsWith("/api/movies/trending?limit=12")) {
         return createJsonResponse({ items: [trendingMovie] });
+      }
+
+      if (url.endsWith("/api/movies/now-playing?limit=12")) {
+        return createJsonResponse({ items: [nowPlayingMovie] });
       }
 
       if (url.endsWith("/api/genres")) {
@@ -316,7 +419,7 @@ describe("App", () => {
     await screen.findByText("Palm Springs");
 
     await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledTimes(4);
+      expect(fetchMock).toHaveBeenCalledTimes(5);
     });
   });
 
@@ -326,6 +429,10 @@ describe("App", () => {
 
       if (url.endsWith("/api/movies/trending?limit=12")) {
         return createJsonResponse({ items: [trendingMovie] });
+      }
+
+      if (url.endsWith("/api/movies/now-playing?limit=12")) {
+        return createJsonResponse({ items: [nowPlayingMovie] });
       }
 
       if (url.endsWith("/api/genres")) {
@@ -368,6 +475,10 @@ describe("App", () => {
 
       if (url.endsWith("/api/movies/trending?limit=12")) {
         return createJsonResponse({ items: [trendingMovie] });
+      }
+
+      if (url.endsWith("/api/movies/now-playing?limit=12")) {
+        return createJsonResponse({ items: [nowPlayingMovie] });
       }
 
       if (url.endsWith("/api/genres")) {
@@ -414,7 +525,7 @@ describe("App", () => {
     expect(screen.getByText(/Release year:/).textContent).toContain("Fix input.");
 
     await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledTimes(3);
+      expect(fetchMock).toHaveBeenCalledTimes(4);
     });
   });
 });

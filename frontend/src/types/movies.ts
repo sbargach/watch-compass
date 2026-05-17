@@ -33,6 +33,10 @@ export interface TrendingMoviesResponse {
   items: MovieCard[];
 }
 
+export interface NowPlayingMoviesResponse {
+  items: MovieCard[];
+}
+
 export interface SimilarMoviesResponse {
   items: MovieCard[];
 }

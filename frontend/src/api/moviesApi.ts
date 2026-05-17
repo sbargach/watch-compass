@@ -2,6 +2,7 @@ import { getApiBaseUrl, postJson, requestJson } from "./http";
 import type {
   GenresResponse,
   MovieDetails,
+  NowPlayingMoviesResponse,
   RecommendationsRequest,
   RecommendationsResponse,
   SearchMoviesResponse,
@@ -13,6 +14,10 @@ export { getApiBaseUrl };
 
 export async function getTrendingMovies(limit: number): Promise<TrendingMoviesResponse> {
   return requestJson<TrendingMoviesResponse>(`/api/movies/trending?limit=${limit}`);
+}
+
+export async function getNowPlayingMovies(limit: number): Promise<NowPlayingMoviesResponse> {
+  return requestJson<NowPlayingMoviesResponse>(`/api/movies/now-playing?limit=${limit}`);
 }
 
 export async function searchMovies(

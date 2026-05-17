@@ -3,6 +3,7 @@ using WatchCompass.Api.Api.Validation;
 using WatchCompass.Application.Dtos;
 using WatchCompass.Application.UseCases.DiscoverMovies;
 using WatchCompass.Application.UseCases.MovieDetails;
+using WatchCompass.Application.UseCases.NowPlayingMovies;
 using WatchCompass.Application.UseCases.SearchMovies;
 using WatchCompass.Application.UseCases.SimilarMovies;
 using WatchCompass.Application.UseCases.TrendingMovies;
@@ -14,8 +15,10 @@ namespace WatchCompass.Api.Api.Controllers;
 [Route("api/movies")]
 public sealed class SearchController : ControllerBase
 {
+    private const int DefaultFeedLimit = 10;
     private const int DefaultSearchPage = 1;
     private const int DefaultSearchPageSize = 10;
+    private const int MaxFeedLimit = 20;
     private const int MaxSearchPageSize = 50;
 
     private readonly SearchMoviesUseCase _searchMoviesUseCase;
@@ -23,19 +26,22 @@ public sealed class SearchController : ControllerBase
     private readonly GetMovieDetailsUseCase _getMovieDetailsUseCase;
     private readonly GetSimilarMoviesUseCase _getSimilarMoviesUseCase;
     private readonly GetTrendingMoviesUseCase _getTrendingMoviesUseCase;
+    private readonly GetNowPlayingMoviesUseCase _getNowPlayingMoviesUseCase;
 
     public SearchController(
         SearchMoviesUseCase searchMoviesUseCase,
         DiscoverMoviesByGenreUseCase discoverMoviesByGenreUseCase,
         GetMovieDetailsUseCase getMovieDetailsUseCase,
         GetSimilarMoviesUseCase getSimilarMoviesUseCase,
-        GetTrendingMoviesUseCase getTrendingMoviesUseCase)
+        GetTrendingMoviesUseCase getTrendingMoviesUseCase,
+        GetNowPlayingMoviesUseCase getNowPlayingMoviesUseCase)
     {
         _searchMoviesUseCase = searchMoviesUseCase;
         _discoverMoviesByGenreUseCase = discoverMoviesByGenreUseCase;
         _getMovieDetailsUseCase = getMovieDetailsUseCase;
         _getSimilarMoviesUseCase = getSimilarMoviesUseCase;
         _getTrendingMoviesUseCase = getTrendingMoviesUseCase;
+        _getNowPlayingMoviesUseCase = getNowPlayingMoviesUseCase;
     }
 
     [HttpGet("search")]
@@ -95,18 +101,34 @@ public sealed class SearchController : ControllerBase
     [HttpGet("trending")]
     public async Task<ActionResult<GetTrendingMoviesResponse>> GetTrending([FromQuery] int? limit, CancellationToken cancellationToken)
     {
-        var effectiveLimit = limit ?? 10;
-        if (effectiveLimit <= 0 || effectiveLimit > 50)
+        var requestProblem = ValidateFeedLimit(limit, out var effectiveLimit);
+        if (requestProblem is not null)
         {
-            return ToProblem(new ProblemDetails
-            {
-                Status = StatusCodes.Status400BadRequest,
-                Title = "Limit must be between 1 and 50."
-            });
+            return ToProblem(requestProblem);
         }
 
         var results = await _getTrendingMoviesUseCase.GetAsync(effectiveLimit, cancellationToken);
         var response = new GetTrendingMoviesResponse
+        {
+            Items = results
+                .Select(ToMovieCardDto)
+                .ToList()
+        };
+
+        return Ok(response);
+    }
+
+    [HttpGet("now-playing")]
+    public async Task<ActionResult<GetNowPlayingMoviesResponse>> GetNowPlaying([FromQuery] int? limit, CancellationToken cancellationToken)
+    {
+        var requestProblem = ValidateFeedLimit(limit, out var effectiveLimit);
+        if (requestProblem is not null)
+        {
+            return ToProblem(requestProblem);
+        }
+
+        var results = await _getNowPlayingMoviesUseCase.GetAsync(effectiveLimit, cancellationToken);
+        var response = new GetNowPlayingMoviesResponse
         {
             Items = results
                 .Select(ToMovieCardDto)
@@ -247,5 +269,20 @@ public sealed class SearchController : ControllerBase
         }
 
         return ReleaseYearValidation.Validate(releaseYear);
+    }
+
+    private static ProblemDetails? ValidateFeedLimit(int? limit, out int effectiveLimit)
+    {
+        effectiveLimit = limit ?? DefaultFeedLimit;
+        if (effectiveLimit <= 0 || effectiveLimit > MaxFeedLimit)
+        {
+            return new ProblemDetails
+            {
+                Status = StatusCodes.Status400BadRequest,
+                Title = $"Limit must be between 1 and {MaxFeedLimit}."
+            };
+        }
+
+        return null;
     }
 }
