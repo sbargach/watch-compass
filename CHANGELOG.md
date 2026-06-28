@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.20.0] - 2026-06-28
+### Added
+- Added frontend architecture summary cards that surface the typed API, operational seams, and visible user constraints.
+- Expanded the root and frontend READMEs with architecture, configuration, quality gates, API surface, and deliberate tradeoff notes.
+
+### Fixed
+- Search, discovery, and recommendation summaries now use singular/plural result labels correctly.
+
+### Changed
+- Reworked frontend copy around recommendations, feeds, and API status to make product behavior and runtime context clearer.
+- Made TMDB retry/backoff and movie-catalog cache defaults explicit in both API appsettings files.
+- Bumped project package versions from `0.19.0` to `0.20.0` across Domain, Contracts, Application, Infrastructure, API, and frontend packages.
+
 ## [0.19.0] - 2026-05-17
 ### Added
 - Added a backend-backed `Now Playing` movie feed and surfaced it in the frontend home view.

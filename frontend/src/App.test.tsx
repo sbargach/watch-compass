@@ -466,7 +466,7 @@ describe("App", () => {
     const searchResultsHeading = await screen.findByRole("heading", { name: "Search Results" });
     expect(screen.getByRole("heading", { name: "Arrival" })).toBeInTheDocument();
     const searchSummary = searchResultsHeading.parentElement?.querySelector("p");
-    expect(searchSummary?.textContent).toContain("(1 results in 2016). Select a card for deeper context.");
+    expect(searchSummary?.textContent).toContain("(1 result in 2016). Select a card for deeper context.");
   });
 
   it("uses the input as the single source of truth when the release year is invalid", async () => {

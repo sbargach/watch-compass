@@ -39,6 +39,20 @@ const WATCH_REGIONS = [
   { code: "BE", label: "Belgium" },
   { code: "CA", label: "Canada" }
 ] as const;
+const ARCHITECTURE_NOTES = [
+  {
+    label: "Typed API surface",
+    detail: "Search, genre discovery, feeds, details, similar titles, and recommendations share contract DTOs."
+  },
+  {
+    label: "Operational seams",
+    detail: "TMDB calls run through retries, cache boundaries, health, metrics, and deterministic HTTP tests."
+  },
+  {
+    label: "Constraint-led UX",
+    detail: "Release year, region, mood, runtime, and genre filters stay visible across the full browsing flow."
+  }
+] as const;
 
 type TrendingState = {
   items: MovieCard[];
@@ -385,19 +399,24 @@ function App() {
   const selectedMovieId = selectedMovie?.movieId ?? null;
   const watchRegionLabel = getWatchRegionLabel(watchRegion);
 
+  const handleWatchRegionChange = (event: ChangeEvent<HTMLSelectElement>) => {
+    setWatchRegion(event.target.value);
+
+    if (selectedMovieId !== null) {
+      setDetailsState((current) => ({
+        ...current,
+        isLoading: true,
+        error: null
+      }));
+    }
+  };
+
   useEffect(() => {
     if (selectedMovieId === null) {
       return;
     }
 
     let isActive = true;
-
-    setDetailsState((current) => ({
-      ...current,
-      details: current.details?.movieId === selectedMovieId ? current.details : null,
-      isLoading: true,
-      error: null
-    }));
 
     void getMovieDetails(selectedMovieId, watchRegion)
       .then((details) => {
@@ -435,12 +454,6 @@ function App() {
     }
 
     let isActive = true;
-
-    setDetailsState((current) => ({
-      ...current,
-      isSimilarLoading: true,
-      similarError: null
-    }));
 
     void getSimilarMovies(selectedMovieId)
       .then((response) => {
@@ -635,11 +648,23 @@ function App() {
 
       <main className="app-content">
         <header className="hero">
-          <p className="hero-kicker">Watch Compass</p>
-          <h1>Movie Discovery Desk</h1>
-          <p className="hero-description">
-            Frontend integration for trending titles, search, and recommendation workflows on top of your API.
-          </p>
+          <div className="hero-copy">
+            <p className="hero-kicker">Watch Compass</p>
+            <h1>Movie discovery with backend discipline.</h1>
+            <p className="hero-description">
+              A full-stack movie workbench that keeps API constraints visible: paged search, genre discovery,
+              region-aware providers, resilient TMDB calls, and transparent recommendation reasons.
+            </p>
+          </div>
+
+          <dl className="hero-architecture-list" aria-label="Architecture summary">
+            {ARCHITECTURE_NOTES.map((signal) => (
+              <div className="hero-architecture-card" key={signal.label}>
+                <dt>{signal.label}</dt>
+                <dd>{signal.detail}</dd>
+              </div>
+            ))}
+          </dl>
         </header>
 
         <section className="search-panel">
@@ -674,7 +699,7 @@ function App() {
 
             <label className="field search-region-field">
               <span>Watch region</span>
-              <select value={watchRegion} onChange={(event) => setWatchRegion(event.target.value)}>
+              <select value={watchRegion} onChange={handleWatchRegionChange}>
                 {WATCH_REGIONS.map((region) => (
                   <option key={region.code} value={region.code}>
                     {region.label} ({region.code})
@@ -685,8 +710,8 @@ function App() {
           </div>
 
           <p className="api-target">
-            API: {getApiBaseUrl()} {" | "} Provider availability uses {watchRegionLabel}. {" | "} Release year:{" "}
-            {releaseYearFieldState.statusLabel}.
+            Connected to <strong>{getApiBaseUrl()}</strong>. Provider availability uses{" "}
+            <strong>{watchRegionLabel}</strong>. Release year: <strong>{releaseYearFieldState.statusLabel}</strong>.
           </p>
           {releaseYearValidationMessage && <p className="status-text status-error">{releaseYearValidationMessage}</p>}
         </section>
@@ -694,11 +719,12 @@ function App() {
         <section className="recommendation-panel">
           <div className="recommendation-panel-header">
             <div>
-              <p className="panel-kicker">Recommendation Studio</p>
-              <h2>Recommendation Builder</h2>
+              <p className="panel-kicker">Decision engine</p>
+              <h2>Build a constrained shortlist</h2>
             </div>
             <p className="recommendation-panel-copy">
-              Shape a mood-based recommendation run with time budget, country context, and genre exclusions.
+              The backend applies the same constraints shown here: mood, runtime budget, region, release year,
+              optional hints, and excluded genres.
             </p>
           </div>
 
@@ -801,7 +827,7 @@ function App() {
 
             <div className="recommendation-actions">
               <button type="submit" disabled={recommendationState.isLoading || !isReleaseYearValid}>
-                {recommendationState.isLoading ? "Curating..." : "Get recommendations"}
+                {recommendationState.isLoading ? "Matching..." : "Get recommendations"}
               </button>
             </div>
           </form>
@@ -825,7 +851,8 @@ function App() {
               <div className="section-heading recommendation-results-heading">
                 <h2>Recommendation Results</h2>
                 <p>
-                  {recommendationState.items.length} picks for <strong>{formatMoodLabel(recommendationForm.mood)}</strong>.
+                  {formatCount(recommendationState.items.length, "pick")} for{" "}
+                  <strong>{formatMoodLabel(recommendationForm.mood)}</strong>.
                 </p>
               </div>
 
@@ -861,8 +888,8 @@ function App() {
                 <h2>Genre Explorer</h2>
               </div>
               <p className="genre-explorer-copy">
-                Pick a genre to browse a popularity-sorted catalog slice from the backend. The toolbar release-year
-                filter also narrows this view. Results reuse the shared details panel and pagination flow.
+                Pick a genre to browse a popularity-sorted catalog slice. The release-year filter narrows this
+                path too, so search and discovery share the same pagination behavior.
               </p>
             </div>
 
@@ -920,7 +947,7 @@ function App() {
                 <div className="section-heading genre-results-heading">
                   <h2>{discoverGenre} Picks</h2>
                   <p>
-                    {discoverState.result?.totalResults ?? 0} results
+                    {formatCount(discoverState.result?.totalResults ?? 0, "result")}
                     {releaseYear !== null ? ` from ${releaseYear}` : ""}. Select a card for details and
                     similar titles.
                   </p>
@@ -950,7 +977,7 @@ function App() {
           <section className="content-section">
             <div className="section-heading">
               <h2>Now Playing</h2>
-              <p>Movies currently in theaters from the TMDB-backed API. Select a card to open details and similar titles.</p>
+              <p>Theatrical feed from the TMDB-backed API. Select a card to inspect providers and similar titles.</p>
             </div>
 
             {nowPlayingState.isLoading && <p className="status-text">Loading now playing movies...</p>}
@@ -972,7 +999,7 @@ function App() {
           <section className="content-section">
             <div className="section-heading">
               <h2>Trending Today</h2>
-              <p>Fresh picks from the TMDB-backed API. Select a card to open details and similar titles.</p>
+              <p>Daily trend feed from the TMDB-backed API. Select a card to keep browsing without losing context.</p>
             </div>
 
             {trendingState.isLoading && <p className="status-text">Loading trending movies...</p>}
@@ -999,7 +1026,7 @@ function App() {
                 {!isReleaseYearValid && " Fix the release year to refresh results."}
                 {isReleaseYearValid &&
                   searchState.result &&
-                  ` (${searchState.result.totalResults} results${releaseYear !== null ? ` in ${releaseYear}` : ""}). Select a card for deeper context.`}
+                  ` (${formatCount(searchState.result.totalResults, "result")}${releaseYear !== null ? ` in ${releaseYear}` : ""}). Select a card for deeper context.`}
               </p>
             </div>
 
@@ -1041,6 +1068,10 @@ function formatMoodLabel(mood: Mood): string {
     default:
       return mood;
   }
+}
+
+function formatCount(count: number, singularNoun: string): string {
+  return `${count} ${count === 1 ? singularNoun : `${singularNoun}s`}`;
 }
 
 function getWatchRegionLabel(countryCode: string): string {

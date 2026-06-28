@@ -70,6 +70,10 @@ body {
 }
 
 .hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(18rem, 26rem);
+  gap: 1.4rem;
+  align-items: end;
   margin-bottom: 1.8rem;
   animation: slide-up 420ms ease-out both;
 }
@@ -91,9 +95,49 @@ body {
 }
 
 .hero-description {
-  max-width: 62ch;
+  max-width: 68ch;
   color: var(--muted);
   margin: 0.75rem 0 0;
+}
+
+.hero-architecture-list {
+  margin: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.hero-architecture-card {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(17, 94, 89, 0.16);
+  border-radius: 1rem;
+  padding: 0.85rem 0.95rem;
+  background:
+    linear-gradient(135deg, rgba(15, 118, 110, 0.1), rgba(245, 158, 11, 0.08)),
+    rgba(255, 255, 255, 0.78);
+  box-shadow: 0 12px 26px rgba(19, 32, 27, 0.06);
+  backdrop-filter: blur(8px);
+}
+
+.hero-architecture-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 0.22rem;
+  background: linear-gradient(180deg, #0f766e, #f59e0b);
+}
+
+.hero-architecture-card dt {
+  margin: 0;
+  font-family: "Space Grotesk", sans-serif;
+  font-weight: 700;
+}
+
+.hero-architecture-card dd {
+  margin: 0.25rem 0 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+  line-height: 1.4;
 }
 
 .search-panel {
@@ -379,6 +423,10 @@ body {
   margin: 0.65rem 0 0;
   font-size: 0.85rem;
   color: var(--muted);
+}
+
+.api-target strong {
+  color: var(--text);
 }
 
 .content-section {
@@ -819,6 +867,10 @@ body {
   }
 
   .search-toolbar {
+    grid-template-columns: 1fr;
+  }
+
+  .hero {
     grid-template-columns: 1fr;
   }
 
