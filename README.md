@@ -1,8 +1,10 @@
 # Watch Compass
 
-Watch Compass is a full-stack movie discovery app for exploring what to watch next. It combines TMDB-backed catalog search, genre discovery, now-playing and trending feeds, movie details, similar-title exploration, provider availability, and transparent mood-based recommendations.
+[![CI](https://github.com/princ/watch-compass/actions/workflows/ci.yml/badge.svg)](https://github.com/princ/watch-compass/actions/workflows/ci.yml)
+![Version](https://img.shields.io/badge/version-0.21.0-0f766e)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-The goal is not to hide behind a polished landing page. The UI exposes the same constraints the API validates: pagination, release-year filtering, watch region, runtime budget, provider availability, and empty/error states.
+Watch Compass is a full-stack movie discovery app for exploring what to watch next. It combines TMDB-backed catalog search, genre discovery, now-playing and trending feeds, movie details, similar-title exploration, provider availability, and transparent mood-based recommendations.
 
 ## Engineering Notes
 - Layered backend: contracts, application use cases, domain value objects, infrastructure adapters, and API controllers stay separated.
@@ -61,7 +63,7 @@ Important API settings can be supplied through `appsettings*.json`, environment 
 | `TMDB__RequestTimeoutSeconds` | Per-request timeout. |
 | `TMDB__MaxRetries` | Retry count for transient upstream failures. |
 | `TMDB__BackoffBaseMilliseconds` | Linear retry backoff base. |
-| `TMDB__BackoffJitterMilliseconds` | Random retry jitter ceiling. |
+| `TMDB__BackoffJitterMilliseconds` | Enables retry jitter when greater than zero. |
 | `Caching__MovieCatalog__*Minutes` | Per-flow cache TTLs for catalog calls. Set a value to `0` to disable that cache slice. |
 | `Cors__AllowedOrigins__0` | Allowed frontend origins for local or deployed clients. |
 
@@ -95,6 +97,16 @@ The integration tests use local WireMock fixtures, so they do not need a TMDB ke
 - `POST /api/recommendations` - mood, runtime, region, release-year, query, and avoid-genre based shortlist.
 
 ## Architecture
+
+```mermaid
+flowchart LR
+    UI[React client] --> API[ASP.NET Core API]
+    API --> APP[Application use cases]
+    APP --> PORT[IMovieCatalog]
+    PORT --> CACHE[In-memory cache decorator]
+    CACHE --> TMDB[Resilient TMDB adapter]
+```
+
 - `src/WatchCompass.Contracts` - public DTOs for API requests and responses.
 - `src/WatchCompass.Domain` - small domain types such as `Mood` and `TimeBudget`.
 - `src/WatchCompass.Application` - use cases and `IMovieCatalog` abstraction.
@@ -108,3 +120,15 @@ The integration tests use local WireMock fixtures, so they do not need a TMDB ke
 - Cache is in-memory. That is appropriate for local and single-instance deployments, but a multi-instance deployment would need distributed cache or cache-aside storage.
 - Authentication is out of scope. The project focuses on catalog integration, service boundaries, and UX state handling.
 - TMDB is the only catalog provider. The `IMovieCatalog` abstraction keeps a second provider possible without changing application use cases.
+
+## Failure Semantics
+
+- Invalid request constraints return RFC 7807 `400` responses.
+- Invalid upstream payloads return a sanitized `502` response.
+- Exhausted TMDB retries and timeouts return a sanitized `503` response.
+- Problem responses include a trace identifier for log correlation without exposing upstream response bodies.
+
+## Credits
+
+Movie data and artwork are supplied by [The Movie Database (TMDB)](https://www.themoviedb.org).
+This product uses the TMDB API but is not endorsed or certified by TMDB.

@@ -4,6 +4,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.21.0] - 2026-08-23
+### Added
+- Added standardized TMDB resilience policies and retry controls.
+- Added frontend recovery actions and request cancellation.
+- Added complete frontend and dependency-security checks to CI.
+- Added required TMDB attribution and application metadata.
+
+### Fixed
+- Recommendation generation now continues beyond rejected candidates and verifies runtime constraints.
+- Upstream failures now return appropriate sanitized API responses.
+- Obsolete frontend requests no longer overwrite newer state.
+- Resolved known high-severity dependency advisories.
+
+### Changed
+- Split frontend page state into focused feature components and hooks.
+- Centralized project versioning and improved architecture documentation.
+
 ## [0.20.0] - 2026-06-28
 ### Added
 - Added frontend architecture summary cards that surface the typed API, operational seams, and visible user constraints.
@@ -155,7 +172,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Unified TMDB configuration validation (ApiKey now throws a dedicated configuration exception).
 - Added WireMock-backed integration tests covering TMDB mapping and API provider population without live HTTP.
 
-## [0.4.0] - 2025-01-04
+## [0.4.0] - 2026-01-04
 - Added: recommendation engine v1 with explainable reasons
 - Added: request validation and consistent 400 ProblemDetails
 - Added: unit + integration tests for recommendations

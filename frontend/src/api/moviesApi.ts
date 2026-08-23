@@ -1,4 +1,4 @@
-import { getApiBaseUrl, postJson, requestJson } from "./http";
+import { postJson, requestJson } from "./http";
 import type {
   GenresResponse,
   MovieDetails,
@@ -10,21 +10,20 @@ import type {
   TrendingMoviesResponse
 } from "../types/movies";
 
-export { getApiBaseUrl };
-
-export async function getTrendingMovies(limit: number): Promise<TrendingMoviesResponse> {
-  return requestJson<TrendingMoviesResponse>(`/api/movies/trending?limit=${limit}`);
+export async function getTrendingMovies(limit: number, signal?: AbortSignal): Promise<TrendingMoviesResponse> {
+  return requestJson<TrendingMoviesResponse>(`/api/movies/trending?limit=${limit}`, signal);
 }
 
-export async function getNowPlayingMovies(limit: number): Promise<NowPlayingMoviesResponse> {
-  return requestJson<NowPlayingMoviesResponse>(`/api/movies/now-playing?limit=${limit}`);
+export async function getNowPlayingMovies(limit: number, signal?: AbortSignal): Promise<NowPlayingMoviesResponse> {
+  return requestJson<NowPlayingMoviesResponse>(`/api/movies/now-playing?limit=${limit}`, signal);
 }
 
 export async function searchMovies(
   query: string,
   page: number,
   pageSize: number,
-  releaseYear?: number
+  releaseYear?: number,
+  signal?: AbortSignal
 ): Promise<SearchMoviesResponse> {
   const params = new URLSearchParams({
     query,
@@ -35,14 +34,15 @@ export async function searchMovies(
     params.set("releaseYear", String(releaseYear));
   }
 
-  return requestJson<SearchMoviesResponse>(`/api/movies/search?${params.toString()}`);
+  return requestJson<SearchMoviesResponse>(`/api/movies/search?${params.toString()}`, signal);
 }
 
 export async function discoverMovies(
   genre: string,
   page: number,
   pageSize: number,
-  releaseYear?: number
+  releaseYear?: number,
+  signal?: AbortSignal
 ): Promise<SearchMoviesResponse> {
   const params = new URLSearchParams({
     genre,
@@ -53,12 +53,13 @@ export async function discoverMovies(
     params.set("releaseYear", String(releaseYear));
   }
 
-  return requestJson<SearchMoviesResponse>(`/api/movies/discover?${params.toString()}`);
+  return requestJson<SearchMoviesResponse>(`/api/movies/discover?${params.toString()}`, signal);
 }
 
 export async function getMovieDetails(
   movieId: number,
-  countryCode?: string
+  countryCode?: string,
+  signal?: AbortSignal
 ): Promise<MovieDetails> {
   const params = new URLSearchParams();
   if (countryCode && countryCode.trim().length > 0) {
@@ -67,19 +68,20 @@ export async function getMovieDetails(
 
   const queryString = params.toString();
   const query = queryString.length > 0 ? `?${queryString}` : "";
-  return requestJson<MovieDetails>(`/api/movies/${movieId}${query}`);
+  return requestJson<MovieDetails>(`/api/movies/${movieId}${query}`, signal);
 }
 
-export async function getSimilarMovies(movieId: number): Promise<SimilarMoviesResponse> {
-  return requestJson<SimilarMoviesResponse>(`/api/movies/${movieId}/similar`);
+export async function getSimilarMovies(movieId: number, signal?: AbortSignal): Promise<SimilarMoviesResponse> {
+  return requestJson<SimilarMoviesResponse>(`/api/movies/${movieId}/similar`, signal);
 }
 
-export async function getGenres(): Promise<GenresResponse> {
-  return requestJson<GenresResponse>("/api/genres");
+export async function getGenres(signal?: AbortSignal): Promise<GenresResponse> {
+  return requestJson<GenresResponse>("/api/genres", signal);
 }
 
 export async function getRecommendations(
-  request: RecommendationsRequest
+  request: RecommendationsRequest,
+  signal?: AbortSignal
 ): Promise<RecommendationsResponse> {
-  return postJson<RecommendationsResponse>("/api/recommendations", request);
+  return postJson<RecommendationsResponse>("/api/recommendations", request, signal);
 }

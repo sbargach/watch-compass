@@ -1,7 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using WatchCompass.Api.Api.Validation;
-using WatchCompass.Application.Abstractions.Movies;
 using WatchCompass.Application.UseCases.Recommendations;
 using WatchCompass.Contracts;
 using WatchCompass.Domain.Enums;
@@ -14,20 +12,16 @@ namespace WatchCompass.Api.Api.Controllers;
 public sealed class RecommendationsController : ControllerBase
 {
     private readonly GetRecommendationsUseCase _useCase;
-    private readonly IMovieCatalog _movieCatalog;
-    private readonly ILogger<RecommendationsController> _logger;
 
-    public RecommendationsController(GetRecommendationsUseCase useCase, IMovieCatalog movieCatalog, ILogger<RecommendationsController> logger)
+    public RecommendationsController(GetRecommendationsUseCase useCase)
     {
         _useCase = useCase;
-        _movieCatalog = movieCatalog;
-        _logger = logger;
     }
 
     [HttpPost]
     public async Task<ActionResult<GetRecommendationsResponse>> Create([FromBody] GetRecommendationsRequest request, CancellationToken cancellationToken)
     {
-        if (!Enum.TryParse<Mood>(request.Mood, true, out var mood))
+        if (!Enum.TryParse<Mood>(request.Mood?.Trim(), true, out var mood))
         {
             return ToProblem(new ProblemDetails
             {
@@ -46,6 +40,20 @@ public sealed class RecommendationsController : ControllerBase
             });
         }
 
+        if (avoidGenres.Any(genre => genre is not null && genre.Trim().Length > RequestValidation.MaxGenreLength))
+        {
+            return ToProblem(RequestValidation.BadRequest($"AvoidGenres entries cannot exceed {RequestValidation.MaxGenreLength} characters."));
+        }
+
+        if (request.Query is not null)
+        {
+            var queryProblem = RequestValidation.ValidateText(request.Query, "Query", RequestValidation.MaxQueryLength);
+            if (queryProblem is not null)
+            {
+                return ToProblem(queryProblem);
+            }
+        }
+
         if (request.TimeBudgetMinutes < 1 || request.TimeBudgetMinutes > 600)
         {
             return ToProblem(new ProblemDetails
@@ -61,30 +69,27 @@ public sealed class RecommendationsController : ControllerBase
             return ToProblem(releaseYearProblem);
         }
 
+        if (!RequestValidation.IsCountryCode(request.CountryCode?.Trim()))
+        {
+            return ToProblem(RequestValidation.BadRequest("CountryCode must be a two-letter country code."));
+        }
+
         var timeBudget = new TimeBudget(request.TimeBudgetMinutes);
-        var countryCode = request.CountryCode ?? string.Empty;
+        var normalizedAvoidGenres = avoidGenres
+            .Where(genre => !string.IsNullOrWhiteSpace(genre))
+            .Select(genre => genre.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+        var countryCode = request.CountryCode!.Trim().ToUpperInvariant();
 
         var recommendations = await _useCase.GetRecommendationsAsync(
             mood,
             timeBudget,
-            request.Query,
-            avoidGenres,
+            request.Query?.Trim(),
+            normalizedAvoidGenres,
+            countryCode,
             request.ReleaseYear,
             cancellationToken);
-
-        var providersByMovie = new Dictionary<int, IReadOnlyList<string>>();
-        foreach (var recommendation in recommendations)
-        {
-            try
-            {
-                var providers = await _movieCatalog.GetWatchProvidersAsync(recommendation.MovieId, countryCode, cancellationToken);
-                providersByMovie[recommendation.MovieId] = providers;
-            }
-            catch (Exception ex) when (ex is not OperationCanceledException)
-            {
-                _logger.LogWarning(ex, "Failed to load providers for movie {MovieId}", recommendation.MovieId);
-            }
-        }
 
         var response = new GetRecommendationsResponse
         {
@@ -96,9 +101,7 @@ public sealed class RecommendationsController : ControllerBase
                     RuntimeMinutes = rec.RuntimeMinutes,
                     Genres = rec.Genres,
                     Reasons = rec.Reasons,
-                    Providers = providersByMovie.TryGetValue(rec.MovieId, out var providers)
-                        ? providers
-                        : rec.Providers,
+                    Providers = rec.Providers,
                     PosterUrl = rec.PosterUrl,
                     BackdropUrl = rec.BackdropUrl,
                     ReleaseYear = rec.ReleaseYear,

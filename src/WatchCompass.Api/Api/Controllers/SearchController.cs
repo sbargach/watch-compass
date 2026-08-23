@@ -61,13 +61,19 @@ public sealed class SearchController : ControllerBase
             });
         }
 
+        var queryProblem = RequestValidation.ValidateText(query, "Query", RequestValidation.MaxQueryLength);
+        if (queryProblem is not null)
+        {
+            return ToProblem(queryProblem);
+        }
+
         var requestProblem = ValidatePagedRequest(page, pageSize, releaseYear, out var effectivePage, out var effectivePageSize);
         if (requestProblem is not null)
         {
             return ToProblem(requestProblem);
         }
 
-        var results = await _searchMoviesUseCase.SearchAsync(query, effectivePage, effectivePageSize, releaseYear, cancellationToken);
+        var results = await _searchMoviesUseCase.SearchAsync(query.Trim(), effectivePage, effectivePageSize, releaseYear, cancellationToken);
         return Ok(ToPagedResponse(results));
     }
 
@@ -88,13 +94,19 @@ public sealed class SearchController : ControllerBase
             });
         }
 
+        var genreProblem = RequestValidation.ValidateText(genre, "Genre", RequestValidation.MaxGenreLength);
+        if (genreProblem is not null)
+        {
+            return ToProblem(genreProblem);
+        }
+
         var requestProblem = ValidatePagedRequest(page, pageSize, releaseYear, out var effectivePage, out var effectivePageSize);
         if (requestProblem is not null)
         {
             return ToProblem(requestProblem);
         }
 
-        var results = await _discoverMoviesByGenreUseCase.GetAsync(genre, effectivePage, effectivePageSize, releaseYear, cancellationToken);
+        var results = await _discoverMoviesByGenreUseCase.GetAsync(genre.Trim(), effectivePage, effectivePageSize, releaseYear, cancellationToken);
         return Ok(ToPagedResponse(results));
     }
 
@@ -173,6 +185,11 @@ public sealed class SearchController : ControllerBase
             });
         }
 
+        if (countryCode is not null && !RequestValidation.IsCountryCode(countryCode.Trim()))
+        {
+            return ToProblem(RequestValidation.BadRequest("CountryCode must be a two-letter country code."));
+        }
+
         MovieDetailsDto BuildResponse(MovieDetailsWithProviders detailsWithProviders)
         {
             return new MovieDetailsDto
@@ -189,7 +206,7 @@ public sealed class SearchController : ControllerBase
             };
         }
 
-        var details = await _getMovieDetailsUseCase.GetAsync(movieId, countryCode, cancellationToken);
+        var details = await _getMovieDetailsUseCase.GetAsync(movieId, countryCode?.Trim().ToUpperInvariant(), cancellationToken);
         if (details is null)
         {
             return ToProblem(new ProblemDetails

@@ -8,8 +8,9 @@ type ApiProblem = {
   detail?: string;
 };
 
-export async function requestJson<T>(path: string): Promise<T> {
+export async function requestJson<T>(path: string, signal?: AbortSignal): Promise<T> {
   const response = await fetch(`${apiBaseUrl}${path}`, {
+    signal,
     headers: {
       Accept: "application/json"
     }
@@ -22,13 +23,14 @@ export async function requestJson<T>(path: string): Promise<T> {
   return (await response.json()) as T;
 }
 
-export async function postJson<TResponse>(path: string, payload: unknown): Promise<TResponse> {
+export async function postJson<TResponse>(path: string, payload: unknown, signal?: AbortSignal): Promise<TResponse> {
   const response = await fetch(`${apiBaseUrl}${path}`, {
     method: "POST",
     headers: {
       Accept: "application/json",
       "Content-Type": "application/json"
     },
+    signal,
     body: JSON.stringify(payload)
   });
 
@@ -37,10 +39,6 @@ export async function postJson<TResponse>(path: string, payload: unknown): Promi
   }
 
   return (await response.json()) as TResponse;
-}
-
-export function getApiBaseUrl(): string {
-  return apiBaseUrl;
 }
 
 async function toApiError(response: Response): Promise<Error> {

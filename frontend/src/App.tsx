@@ -1,26 +1,18 @@
-import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
-import {
-  discoverMovies,
-  getApiBaseUrl,
-  getGenres,
-  getMovieDetails,
-  getNowPlayingMovies,
-  getRecommendations,
-  getSimilarMovies,
-  getTrendingMovies,
-  searchMovies
-} from "./api/moviesApi";
+import { useState, type ChangeEvent, type FormEvent } from "react";
 import { MovieDetailsPanel } from "./components/MovieDetailsPanel";
 import { MovieGrid } from "./components/MovieGrid";
 import { Pagination } from "./components/Pagination";
 import { RecommendationGrid } from "./components/RecommendationGrid";
+import { CreditsFooter } from "./components/CreditsFooter";
+import { useCatalogOverview } from "./features/catalog/useCatalogOverview";
+import { CatalogFeedSection } from "./features/catalog/CatalogFeedSection";
+import { useMovieDetails } from "./features/details/useMovieDetails";
+import { usePagedMovies } from "./features/browse/usePagedMovies";
+import { useRecommendations } from "./features/recommendations/useRecommendations";
 import type {
   Mood,
   MovieCard,
-  MovieDetails,
-  Recommendation,
-  RecommendationsRequest,
-  SearchMoviesResponse
+  Recommendation
 } from "./types/movies";
 
 const RESULTS_PAGE_SIZE = 12;
@@ -39,62 +31,6 @@ const WATCH_REGIONS = [
   { code: "BE", label: "Belgium" },
   { code: "CA", label: "Canada" }
 ] as const;
-const ARCHITECTURE_NOTES = [
-  {
-    label: "Typed API surface",
-    detail: "Search, genre discovery, feeds, details, similar titles, and recommendations share contract DTOs."
-  },
-  {
-    label: "Operational seams",
-    detail: "TMDB calls run through retries, cache boundaries, health, metrics, and deterministic HTTP tests."
-  },
-  {
-    label: "Constraint-led UX",
-    detail: "Release year, region, mood, runtime, and genre filters stay visible across the full browsing flow."
-  }
-] as const;
-
-type TrendingState = {
-  items: MovieCard[];
-  isLoading: boolean;
-  error: string | null;
-};
-
-type SearchState = {
-  result: SearchMoviesResponse | null;
-  isLoading: boolean;
-  error: string | null;
-};
-
-type DetailsState = {
-  details: MovieDetails | null;
-  similarMovies: MovieCard[];
-  isLoading: boolean;
-  isSimilarLoading: boolean;
-  error: string | null;
-  similarError: string | null;
-};
-
-type GenresState = {
-  items: string[];
-  isLoading: boolean;
-  error: string | null;
-};
-
-type RecommendationState = {
-  items: Recommendation[];
-  isLoading: boolean;
-  error: string | null;
-  hasRequested: boolean;
-  appliedRequestKey: string | null;
-};
-
-type RecommendationFormState = {
-  mood: Mood;
-  timeBudgetMinutes: string;
-  query: string;
-  avoidGenres: string[];
-};
 
 type ReleaseYearFieldState = {
   releaseYear: number | null;
@@ -102,402 +38,78 @@ type ReleaseYearFieldState = {
   statusLabel: string;
 };
 
-function createEmptyDetailsState(): DetailsState {
-  return {
-    details: null,
-    similarMovies: [],
-    isLoading: false,
-    isSimilarLoading: false,
-    error: null,
-    similarError: null
-  };
-}
-
-function createLoadingDetailsState(): DetailsState {
-  return {
-    details: null,
-    similarMovies: [],
-    isLoading: true,
-    isSimilarLoading: true,
-    error: null,
-    similarError: null
-  };
-}
-
-function createInitialRecommendationFormState(): RecommendationFormState {
-  return {
-    mood: "FeelGood",
-    timeBudgetMinutes: "120",
-    query: "",
-    avoidGenres: []
-  };
-}
-
-function createInitialRecommendationState(): RecommendationState {
-  return {
-    items: [],
-    isLoading: false,
-    error: null,
-    hasRequested: false,
-    appliedRequestKey: null
-  };
-}
-
 function App() {
   const [queryInput, setQueryInput] = useState("");
   const [releaseYearInput, setReleaseYearInput] = useState("");
   const [activeQuery, setActiveQuery] = useState("");
   const [searchPage, setSearchPage] = useState(1);
   const [searchNonce, setSearchNonce] = useState(0);
-  const [trendingState, setTrendingState] = useState<TrendingState>({
-    items: [],
-    isLoading: true,
-    error: null
-  });
-  const [nowPlayingState, setNowPlayingState] = useState<TrendingState>({
-    items: [],
-    isLoading: true,
-    error: null
-  });
-  const [searchState, setSearchState] = useState<SearchState>({
-    result: null,
-    isLoading: false,
-    error: null
-  });
+  const {
+    trendingState,
+    nowPlayingState,
+    genresState,
+    retryTrending,
+    retryNowPlaying,
+    retryGenres
+  } = useCatalogOverview(
+    TRENDING_LIMIT,
+    NOW_PLAYING_LIMIT
+  );
   const [discoverGenre, setDiscoverGenre] = useState<string | null>(null);
   const [discoverPage, setDiscoverPage] = useState(1);
-  const [discoverState, setDiscoverState] = useState<SearchState>({
-    result: null,
-    isLoading: false,
-    error: null
-  });
   const [selectedMovie, setSelectedMovie] = useState<MovieCard | null>(null);
-  const [detailsState, setDetailsState] = useState<DetailsState>(() => createEmptyDetailsState());
-  const [genresState, setGenresState] = useState<GenresState>({
-    items: [],
-    isLoading: true,
-    error: null
-  });
   const [watchRegion, setWatchRegion] = useState(DEFAULT_WATCH_REGION);
-  const [recommendationForm, setRecommendationForm] = useState<RecommendationFormState>(() =>
-    createInitialRecommendationFormState()
-  );
-  const [recommendationState, setRecommendationState] = useState<RecommendationState>(() =>
-    createInitialRecommendationState()
-  );
   const releaseYearFieldState = getReleaseYearFieldState(releaseYearInput);
   const releaseYear = releaseYearFieldState.releaseYear;
   const releaseYearValidationMessage = releaseYearFieldState.validationMessage;
   const isReleaseYearValid = releaseYearValidationMessage === null;
-  const recommendationRequestKey = getRecommendationRequestKey(
+  const {
     recommendationForm,
+    setRecommendationForm,
+    recommendationState,
+    recommendationStateMatchesRequest,
+    handleRecommendationSubmit
+  } = useRecommendations({
     watchRegion,
     releaseYearInput,
-    releaseYearFieldState
-  );
-
-  useEffect(() => {
-    let isActive = true;
-    const loadTrending = async () => {
-      try {
-        const response = await getTrendingMovies(TRENDING_LIMIT);
-        if (!isActive) {
-          return;
-        }
-
-        setTrendingState({
-          items: response.items,
-          isLoading: false,
-          error: null
-        });
-      } catch (error) {
-        if (!isActive) {
-          return;
-        }
-
-        setTrendingState({
-          items: [],
-          isLoading: false,
-          error: toErrorMessage(error)
-        });
-      }
-    };
-
-    void loadTrending();
-
-    return () => {
-      isActive = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    let isActive = true;
-    const loadNowPlaying = async () => {
-      try {
-        const response = await getNowPlayingMovies(NOW_PLAYING_LIMIT);
-        if (!isActive) {
-          return;
-        }
-
-        setNowPlayingState({
-          items: response.items,
-          isLoading: false,
-          error: null
-        });
-      } catch (error) {
-        if (!isActive) {
-          return;
-        }
-
-        setNowPlayingState({
-          items: [],
-          isLoading: false,
-          error: toErrorMessage(error)
-        });
-      }
-    };
-
-    void loadNowPlaying();
-
-    return () => {
-      isActive = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    let isActive = true;
-
-    void getGenres()
-      .then((response) => {
-        if (!isActive) {
-          return;
-        }
-
-        setGenresState({
-          items: response.items,
-          isLoading: false,
-          error: null
-        });
-      })
-      .catch((error: unknown) => {
-        if (!isActive) {
-          return;
-        }
-
-        setGenresState({
-          items: [],
-          isLoading: false,
-          error: toErrorMessage(error)
-        });
-      });
-
-    return () => {
-      isActive = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    if (activeQuery.length === 0 || !isReleaseYearValid) {
-      return;
-    }
-
-    let isActive = true;
-
-    const loadSearchResults = async () => {
-      setSearchState({
-        result: null,
-        isLoading: true,
-        error: null
-      });
-
-      try {
-        const response = await searchMovies(
-          activeQuery,
-          searchPage,
-          RESULTS_PAGE_SIZE,
-          releaseYear ?? undefined
-        );
-        if (!isActive) {
-          return;
-        }
-
-        setSearchState({
-          result: response,
-          isLoading: false,
-          error: null
-        });
-      } catch (error) {
-        if (!isActive) {
-          return;
-        }
-
-        setSearchState({
-          result: null,
-          isLoading: false,
-          error: toErrorMessage(error)
-        });
-      }
-    };
-
-    void loadSearchResults();
-
-    return () => {
-      isActive = false;
-    };
-  }, [activeQuery, isReleaseYearValid, releaseYear, searchPage, searchNonce]);
-
-  useEffect(() => {
-    if (discoverGenre === null || !isReleaseYearValid) {
-      return;
-    }
-
-    let isActive = true;
-
-    const loadDiscoverResults = async () => {
-      setDiscoverState({
-        result: null,
-        isLoading: true,
-        error: null
-      });
-
-      try {
-        const response = await discoverMovies(
-          discoverGenre,
-          discoverPage,
-          RESULTS_PAGE_SIZE,
-          releaseYear ?? undefined
-        );
-        if (!isActive) {
-          return;
-        }
-
-        setDiscoverState({
-          result: response,
-          isLoading: false,
-          error: null
-        });
-      } catch (error) {
-        if (!isActive) {
-          return;
-        }
-
-        setDiscoverState({
-          result: null,
-          isLoading: false,
-          error: toErrorMessage(error)
-        });
-      }
-    };
-
-    void loadDiscoverResults();
-
-    return () => {
-      isActive = false;
-    };
-  }, [discoverGenre, discoverPage, isReleaseYearValid, releaseYear]);
+    releaseYear,
+    releaseYearValidationMessage,
+    onBeforeRequest: () => setSelectedMovie(null)
+  });
+  const searchState = usePagedMovies({
+    mode: "search",
+    value: activeQuery || null,
+    page: searchPage,
+    pageSize: RESULTS_PAGE_SIZE,
+    releaseYear: releaseYear ?? undefined,
+    isValid: isReleaseYearValid,
+    reloadKey: searchNonce
+  });
+  const discoverState = usePagedMovies({
+    mode: "discover",
+    value: discoverGenre,
+    page: discoverPage,
+    pageSize: RESULTS_PAGE_SIZE,
+    releaseYear: releaseYear ?? undefined,
+    isValid: isReleaseYearValid
+  });
 
   const selectedMovieId = selectedMovie?.movieId ?? null;
+  const detailsState = useMovieDetails(selectedMovieId, watchRegion);
   const watchRegionLabel = getWatchRegionLabel(watchRegion);
 
   const handleWatchRegionChange = (event: ChangeEvent<HTMLSelectElement>) => {
     setWatchRegion(event.target.value);
 
-    if (selectedMovieId !== null) {
-      setDetailsState((current) => ({
-        ...current,
-        isLoading: true,
-        error: null
-      }));
-    }
   };
-
-  useEffect(() => {
-    if (selectedMovieId === null) {
-      return;
-    }
-
-    let isActive = true;
-
-    void getMovieDetails(selectedMovieId, watchRegion)
-      .then((details) => {
-        if (!isActive) {
-          return;
-        }
-
-        setDetailsState((current) => ({
-          ...current,
-          details,
-          isLoading: false
-        }));
-      })
-      .catch((error: unknown) => {
-        if (!isActive) {
-          return;
-        }
-
-        setDetailsState((current) => ({
-          ...current,
-          details: null,
-          isLoading: false,
-          error: toErrorMessage(error)
-        }));
-      });
-
-    return () => {
-      isActive = false;
-    };
-  }, [selectedMovieId, watchRegion]);
-
-  useEffect(() => {
-    if (selectedMovieId === null) {
-      return;
-    }
-
-    let isActive = true;
-
-    void getSimilarMovies(selectedMovieId)
-      .then((response) => {
-        if (!isActive) {
-          return;
-        }
-
-        setDetailsState((current) => ({
-          ...current,
-          similarMovies: response.items,
-          isSimilarLoading: false
-        }));
-      })
-      .catch((error: unknown) => {
-        if (!isActive) {
-          return;
-        }
-
-        setDetailsState((current) => ({
-          ...current,
-          similarMovies: [],
-          isSimilarLoading: false,
-          similarError: toErrorMessage(error)
-        }));
-      });
-
-    return () => {
-      isActive = false;
-    };
-  }, [selectedMovieId]);
 
   const clearSelectedMovie = () => {
     setSelectedMovie(null);
-    setDetailsState(createEmptyDetailsState());
   };
 
   const clearDiscoverSelection = () => {
     setDiscoverGenre(null);
     setDiscoverPage(1);
-    setDiscoverState({
-      result: null,
-      isLoading: false,
-      error: null
-    });
   };
 
   const handleSelectDiscoverGenre = (genre: string) => {
@@ -518,7 +130,6 @@ function App() {
     }
 
     setSelectedMovie(movie);
-    setDetailsState(createLoadingDetailsState());
   };
 
   const handleReleaseYearChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -552,11 +163,6 @@ function App() {
       clearSelectedMovie();
       setActiveQuery("");
       setSearchPage(1);
-      setSearchState({
-        result: null,
-        isLoading: false,
-        error: null
-      });
       return;
     }
 
@@ -570,101 +176,22 @@ function App() {
     setSearchNonce((current) => current + 1);
   };
 
-  const handleRecommendationSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const requestKey = recommendationRequestKey;
-
-    const parsedTimeBudget = Number.parseInt(recommendationForm.timeBudgetMinutes, 10);
-    if (Number.isNaN(parsedTimeBudget) || parsedTimeBudget < 1 || parsedTimeBudget > 600) {
-      setRecommendationState({
-        items: [],
-        isLoading: false,
-        error: "Time budget must be between 1 and 600 minutes.",
-        hasRequested: true,
-        appliedRequestKey: requestKey
-      });
-      return;
-    }
-
-    if (releaseYearValidationMessage !== null) {
-      setRecommendationState({
-        items: [],
-        isLoading: false,
-        error: releaseYearValidationMessage,
-        hasRequested: true,
-        appliedRequestKey: requestKey
-      });
-      return;
-    }
-
-    const request: RecommendationsRequest = {
-      mood: recommendationForm.mood,
-      timeBudgetMinutes: parsedTimeBudget,
-      query: recommendationForm.query.trim() || undefined,
-      avoidGenres: recommendationForm.avoidGenres,
-      releaseYear: releaseYear ?? undefined,
-      countryCode: watchRegion
-    };
-
-    clearSelectedMovie();
-    setRecommendationState({
-      items: [],
-      isLoading: true,
-      error: null,
-      hasRequested: true,
-      appliedRequestKey: requestKey
-    });
-
-    try {
-      const response = await getRecommendations(request);
-      setRecommendationState({
-        items: response.items,
-        isLoading: false,
-        error: null,
-        hasRequested: true,
-        appliedRequestKey: requestKey
-      });
-    } catch (error) {
-      setRecommendationState({
-        items: [],
-        isLoading: false,
-        error: toErrorMessage(error),
-        hasRequested: true,
-        appliedRequestKey: requestKey
-      });
-    }
-  };
-
   const hasSearch = activeQuery.length > 0;
   const hasSearchResults = (searchState.result?.items.length ?? 0) > 0;
   const hasDiscoverResults = (discoverState.result?.items.length ?? 0) > 0;
-  const recommendationStateMatchesRequest = recommendationState.appliedRequestKey === recommendationRequestKey;
   const hasRecommendations = recommendationStateMatchesRequest && recommendationState.items.length > 0;
 
   return (
     <div className="app-shell">
-      <div className="app-aurora app-aurora-left" />
-      <div className="app-aurora app-aurora-right" />
-
       <main className="app-content">
         <header className="hero">
           <div className="hero-copy">
             <p className="hero-kicker">Watch Compass</p>
-            <h1>Movie discovery with backend discipline.</h1>
+            <h1>Find something worth watching.</h1>
             <p className="hero-description">
-              A full-stack movie workbench that keeps API constraints visible: paged search, genre discovery,
-              region-aware providers, resilient TMDB calls, and transparent recommendation reasons.
+              Search movies, browse current releases, and build a shortlist around your mood and available time.
             </p>
           </div>
-
-          <dl className="hero-architecture-list" aria-label="Architecture summary">
-            {ARCHITECTURE_NOTES.map((signal) => (
-              <div className="hero-architecture-card" key={signal.label}>
-                <dt>{signal.label}</dt>
-                <dd>{signal.detail}</dd>
-              </div>
-            ))}
-          </dl>
         </header>
 
         <section className="search-panel">
@@ -709,22 +236,17 @@ function App() {
             </label>
           </div>
 
-          <p className="api-target">
-            Connected to <strong>{getApiBaseUrl()}</strong>. Provider availability uses{" "}
-            <strong>{watchRegionLabel}</strong>. Release year: <strong>{releaseYearFieldState.statusLabel}</strong>.
-          </p>
-          {releaseYearValidationMessage && <p className="status-text status-error">{releaseYearValidationMessage}</p>}
+          {releaseYearValidationMessage && <p className="status-text status-error" role="alert">{releaseYearValidationMessage}</p>}
         </section>
 
         <section className="recommendation-panel">
           <div className="recommendation-panel-header">
             <div>
-              <p className="panel-kicker">Decision engine</p>
-              <h2>Build a constrained shortlist</h2>
+              <p className="panel-kicker">Recommendations</p>
+              <h2>Build a shortlist</h2>
             </div>
             <p className="recommendation-panel-copy">
-              The backend applies the same constraints shown here: mood, runtime budget, region, release year,
-              optional hints, and excluded genres.
+              Choose a mood, set your available time, and exclude anything you do not want to watch.
             </p>
           </div>
 
@@ -778,7 +300,7 @@ function App() {
               <span>Optional hint</span>
               <input
                 type="text"
-                placeholder="Actor, franchise, vibe..."
+                placeholder="Actor, franchise, or title..."
                 value={recommendationForm.query}
                 onChange={(event) =>
                   setRecommendationForm((current) => ({
@@ -792,7 +314,12 @@ function App() {
             <div className="field field-full">
               <span>Avoid genres</span>
               {genresState.isLoading && <p className="status-text">Loading genres...</p>}
-              {genresState.error && <p className="status-text status-error">{genresState.error}</p>}
+              {genresState.error && (
+                <div className="recovery-action" role="alert">
+                  <p className="status-text status-error">{genresState.error}</p>
+                  <button type="button" className="secondary-button" onClick={retryGenres}>Retry genres</button>
+                </div>
+              )}
               {!genresState.isLoading && !genresState.error && genresState.items.length === 0 && (
                 <p className="status-text">No genres were returned.</p>
               )}
@@ -833,7 +360,7 @@ function App() {
           </form>
 
           {recommendationStateMatchesRequest && recommendationState.error && (
-            <p className="status-text status-error">{recommendationState.error}</p>
+            <p className="status-text status-error" role="alert">{recommendationState.error}</p>
           )}
           {recommendationStateMatchesRequest && recommendationState.isLoading && (
             <p className="status-text">Loading recommendations...</p>
@@ -876,6 +403,7 @@ function App() {
             similarError={detailsState.similarError}
             watchRegionLabel={watchRegionLabel}
             onClose={clearSelectedMovie}
+            onRetry={detailsState.retry}
             onSelectMovie={handleSelectMovie}
           />
         )}
@@ -888,13 +416,17 @@ function App() {
                 <h2>Genre Explorer</h2>
               </div>
               <p className="genre-explorer-copy">
-                Pick a genre to browse a popularity-sorted catalog slice. The release-year filter narrows this
-                path too, so search and discovery share the same pagination behavior.
+                Pick a genre to browse popular movies. The release-year filter applies here too.
               </p>
             </div>
 
             {genresState.isLoading && <p className="status-text">Loading genres...</p>}
-            {genresState.error && <p className="status-text status-error">{genresState.error}</p>}
+            {genresState.error && (
+              <div className="recovery-action" role="alert">
+                <p className="status-text status-error">{genresState.error}</p>
+                <button type="button" className="secondary-button" onClick={retryGenres}>Retry genres</button>
+              </div>
+            )}
             {!genresState.isLoading && !genresState.error && genresState.items.length === 0 && (
               <p className="status-text">No genres were returned.</p>
             )}
@@ -934,7 +466,7 @@ function App() {
             {discoverGenre && !isReleaseYearValid && (
               <p className="status-text">Fix the release year to refresh this genre view.</p>
             )}
-            {isReleaseYearValid && discoverState.error && <p className="status-text status-error">{discoverState.error}</p>}
+            {isReleaseYearValid && discoverState.error && <p className="status-text status-error" role="alert">{discoverState.error}</p>}
             {isReleaseYearValid && discoverState.isLoading && discoverGenre && (
               <p className="status-text">Loading {discoverGenre} picks...</p>
             )}
@@ -974,47 +506,31 @@ function App() {
         )}
 
         {!hasSearch && (
-          <section className="content-section">
-            <div className="section-heading">
-              <h2>Now Playing</h2>
-              <p>Theatrical feed from the TMDB-backed API. Select a card to inspect providers and similar titles.</p>
-            </div>
-
-            {nowPlayingState.isLoading && <p className="status-text">Loading now playing movies...</p>}
-            {nowPlayingState.error && <p className="status-text status-error">{nowPlayingState.error}</p>}
-            {!nowPlayingState.isLoading && !nowPlayingState.error && nowPlayingState.items.length === 0 && (
-              <p className="status-text">No now playing movies were returned.</p>
-            )}
-            {nowPlayingState.items.length > 0 && (
-              <MovieGrid
-                movies={nowPlayingState.items}
-                onSelectMovie={handleSelectMovie}
-                selectedMovieId={selectedMovie?.movieId}
-              />
-            )}
-          </section>
+          <CatalogFeedSection
+            title="Now Playing"
+            description="Movies currently playing in theaters."
+            loadingLabel="Loading now playing movies..."
+            emptyLabel="No now playing movies were returned."
+            retryLabel="Retry now playing"
+            state={nowPlayingState}
+            selectedMovieId={selectedMovie?.movieId}
+            onSelectMovie={handleSelectMovie}
+            onRetry={retryNowPlaying}
+          />
         )}
 
         {!hasSearch && (
-          <section className="content-section">
-            <div className="section-heading">
-              <h2>Trending Today</h2>
-              <p>Daily trend feed from the TMDB-backed API. Select a card to keep browsing without losing context.</p>
-            </div>
-
-            {trendingState.isLoading && <p className="status-text">Loading trending movies...</p>}
-            {trendingState.error && <p className="status-text status-error">{trendingState.error}</p>}
-            {!trendingState.isLoading && !trendingState.error && trendingState.items.length === 0 && (
-              <p className="status-text">No trending movies were returned.</p>
-            )}
-            {trendingState.items.length > 0 && (
-              <MovieGrid
-                movies={trendingState.items}
-                onSelectMovie={handleSelectMovie}
-                selectedMovieId={selectedMovie?.movieId}
-              />
-            )}
-          </section>
+          <CatalogFeedSection
+            title="Trending Today"
+            description="Movies people are watching today."
+            loadingLabel="Loading trending movies..."
+            emptyLabel="No trending movies were returned."
+            retryLabel="Retry trending"
+            state={trendingState}
+            selectedMovieId={selectedMovie?.movieId}
+            onSelectMovie={handleSelectMovie}
+            onRetry={retryTrending}
+          />
         )}
 
         {hasSearch && (
@@ -1030,7 +546,7 @@ function App() {
               </p>
             </div>
 
-            {isReleaseYearValid && searchState.error && <p className="status-text status-error">{searchState.error}</p>}
+            {isReleaseYearValid && searchState.error && <p className="status-text status-error" role="alert">{searchState.error}</p>}
             {isReleaseYearValid && searchState.isLoading && <p className="status-text">Loading page {searchPage}...</p>}
             {isReleaseYearValid && !searchState.isLoading && !searchState.error && !hasSearchResults && (
               <p className="status-text">No movies matched your query.</p>
@@ -1056,6 +572,7 @@ function App() {
             )}
           </section>
         )}
+        <CreditsFooter />
       </main>
     </div>
   );
@@ -1090,38 +607,6 @@ function toMovieCard(recommendation: Recommendation): MovieCard {
     releaseYear: recommendation.releaseYear,
     overview: recommendation.overview
   };
-}
-
-function toErrorMessage(error: unknown): string {
-  if (error instanceof Error && error.message.trim().length > 0) {
-    return error.message;
-  }
-
-  return "Unexpected error while calling the API.";
-}
-
-function getRecommendationRequestKey(
-  form: RecommendationFormState,
-  watchRegion: string,
-  releaseYearInput: string,
-  releaseYearFieldState: ReleaseYearFieldState
-): string {
-  const normalizedAvoidGenres = [...form.avoidGenres]
-    .map((genre) => genre.trim())
-    .filter((genre) => genre.length > 0)
-    .sort((left, right) => left.localeCompare(right));
-  const releaseYearKey = releaseYearFieldState.validationMessage === null
-    ? `valid:${releaseYearFieldState.releaseYear ?? "all"}`
-    : `invalid:${releaseYearInput.trim()}`;
-
-  return [
-    `mood:${form.mood}`,
-    `budget:${form.timeBudgetMinutes.trim()}`,
-    `query:${form.query.trim()}`,
-    `avoid:${normalizedAvoidGenres.join(",")}`,
-    `country:${watchRegion}`,
-    `releaseYear:${releaseYearKey}`
-  ].join("|");
 }
 
 function getReleaseYearFieldState(input: string): ReleaseYearFieldState {

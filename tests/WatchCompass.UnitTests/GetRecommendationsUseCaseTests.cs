@@ -11,6 +11,8 @@ namespace WatchCompass.UnitTests;
 [TestFixture]
 public class GetRecommendationsUseCaseTests
 {
+    private const string CountryCode = "NL";
+
     [Test]
     public async Task UsesMoodFallbackQueryWhenQueryMissing()
     {
@@ -23,7 +25,7 @@ public class GetRecommendationsUseCaseTests
         };
         var useCase = new GetRecommendationsUseCase(catalog);
 
-        var recommendations = await useCase.GetRecommendationsAsync(Mood.Chill, new TimeBudget(120), null, Array.Empty<string>());
+        var recommendations = await useCase.GetRecommendationsAsync(Mood.Chill, new TimeBudget(120), null, Array.Empty<string>(), CountryCode);
 
         catalog.Queries.ShouldBe(new[] { "drama" });
         recommendations.Count.ShouldBe(1);
@@ -47,6 +49,7 @@ public class GetRecommendationsUseCaseTests
             new TimeBudget(120),
             "comedy",
             Array.Empty<string>(),
+            CountryCode,
             2020);
 
         recommendations.Count.ShouldBe(1);
@@ -71,7 +74,7 @@ public class GetRecommendationsUseCaseTests
         };
         var useCase = new GetRecommendationsUseCase(catalog);
 
-        var recommendations = await useCase.GetRecommendationsAsync(Mood.Intense, new TimeBudget(120), "thriller", Array.Empty<string>());
+        var recommendations = await useCase.GetRecommendationsAsync(Mood.Intense, new TimeBudget(120), "thriller", Array.Empty<string>(), CountryCode);
 
         recommendations.Count.ShouldBe(1);
         recommendations[0].MovieId.ShouldBe(2);
@@ -90,7 +93,7 @@ public class GetRecommendationsUseCaseTests
         };
         var useCase = new GetRecommendationsUseCase(catalog);
 
-        var recommendations = await useCase.GetRecommendationsAsync(Mood.Scary, new TimeBudget(120), string.Empty, new[] { " horror " });
+        var recommendations = await useCase.GetRecommendationsAsync(Mood.Scary, new TimeBudget(120), string.Empty, new[] { " horror " }, CountryCode);
 
         recommendations.Count.ShouldBe(1);
         recommendations[0].MovieId.ShouldBe(2);
@@ -109,7 +112,7 @@ public class GetRecommendationsUseCaseTests
         };
         var useCase = new GetRecommendationsUseCase(catalog);
 
-        var recommendations = await useCase.GetRecommendationsAsync(Mood.Intense, new TimeBudget(100), "thriller", Array.Empty<string>());
+        var recommendations = await useCase.GetRecommendationsAsync(Mood.Intense, new TimeBudget(100), "thriller", Array.Empty<string>(), CountryCode);
 
         recommendations.Count.ShouldBe(1);
         recommendations[0].Reasons.Count.ShouldBeGreaterThanOrEqualTo(2);
@@ -131,10 +134,132 @@ public class GetRecommendationsUseCaseTests
         };
         var useCase = new GetRecommendationsUseCase(catalog);
 
-        var recommendations = await useCase.GetRecommendationsAsync(Mood.FeelGood, new TimeBudget(200), null, Array.Empty<string>());
+        var recommendations = await useCase.GetRecommendationsAsync(Mood.FeelGood, new TimeBudget(200), null, Array.Empty<string>(), CountryCode);
 
         recommendations.Count.ShouldBe(3);
         recommendations.Select(r => r.MovieId).ShouldBe(new[] { 1, 2, 3 });
+    }
+
+    [Test]
+    public async Task ContinuesPastRejectedFirstBatch()
+    {
+        var catalog = new FakeMovieCatalog
+        {
+            SearchResults = Enumerable.Range(1, 5)
+                .Select(id => new MovieCard(id, $"Long {id}", 180, new[] { "Drama" }))
+                .Append(new MovieCard(6, "Valid Pick", 90, new[] { "Drama" }))
+                .ToArray()
+        };
+        var useCase = new GetRecommendationsUseCase(catalog);
+
+        var recommendations = await useCase.GetRecommendationsAsync(
+            Mood.Chill,
+            new TimeBudget(120),
+            "drama",
+            Array.Empty<string>(),
+            CountryCode);
+
+        recommendations.Select(recommendation => recommendation.MovieId).ShouldBe(new[] { 6 });
+    }
+
+    [Test]
+    public async Task RejectsCandidateWhenRuntimeCannotBeVerified()
+    {
+        var catalog = new FakeMovieCatalog
+        {
+            SearchResults = new[]
+            {
+                new MovieCard(1, "Unknown Runtime", null, new[] { "Drama" })
+            }
+        };
+        var useCase = new GetRecommendationsUseCase(catalog);
+
+        var recommendations = await useCase.GetRecommendationsAsync(
+            Mood.Chill,
+            new TimeBudget(120),
+            "drama",
+            Array.Empty<string>(),
+            CountryCode);
+
+        recommendations.ShouldBeEmpty();
+    }
+
+    [Test]
+    public async Task PopulatesProvidersForNormalizedCountryCode()
+    {
+        var catalog = new FakeMovieCatalog
+        {
+            SearchResults = new[]
+            {
+                new MovieCard(1, "Provider Pick", 90, new[] { "Drama" })
+            },
+            ProvidersById = new Dictionary<int, IReadOnlyList<string>>
+            {
+                [1] = new[] { "Netflix" }
+            }
+        };
+        var useCase = new GetRecommendationsUseCase(catalog);
+
+        var recommendations = await useCase.GetRecommendationsAsync(
+            Mood.Chill,
+            new TimeBudget(120),
+            "drama",
+            Array.Empty<string>(),
+            " nl ");
+
+        recommendations[0].Providers.ShouldBe(new[] { "Netflix" });
+        catalog.ProviderCountryCodes.ShouldBe(new[] { "NL" });
+    }
+
+    [Test]
+    public async Task KeepsRecommendationsWhenProviderLookupFails()
+    {
+        var catalog = new FakeMovieCatalog
+        {
+            SearchResults = new[]
+            {
+                new MovieCard(1, "Unavailable Providers", 90, new[] { "Drama" }),
+                new MovieCard(2, "Available Providers", 95, new[] { "Drama" })
+            },
+            ProvidersById = new Dictionary<int, IReadOnlyList<string>>
+            {
+                [2] = new[] { "Prime Video" }
+            },
+            ProviderFailures = new HashSet<int> { 1 }
+        };
+        var useCase = new GetRecommendationsUseCase(catalog);
+
+        var recommendations = await useCase.GetRecommendationsAsync(
+            Mood.Chill,
+            new TimeBudget(120),
+            "drama",
+            Array.Empty<string>(),
+            CountryCode);
+
+        recommendations.Count.ShouldBe(2);
+        recommendations[0].Providers.ShouldBeEmpty();
+        recommendations[1].Providers.ShouldBe(new[] { "Prime Video" });
+    }
+
+    [Test]
+    public async Task PropagatesProviderLookupCancellation()
+    {
+        var catalog = new FakeMovieCatalog
+        {
+            SearchResults = new[]
+            {
+                new MovieCard(1, "Cancelled Pick", 90, new[] { "Drama" })
+            },
+            CancelProviderLookups = true
+        };
+        var useCase = new GetRecommendationsUseCase(catalog);
+
+        await Should.ThrowAsync<OperationCanceledException>(() => useCase.GetRecommendationsAsync(
+            Mood.Chill,
+            new TimeBudget(120),
+            "drama",
+            Array.Empty<string>(),
+            CountryCode));
     }
 
     private sealed class FakeMovieCatalog : IMovieCatalog
@@ -142,12 +267,17 @@ public class GetRecommendationsUseCaseTests
         public List<string> Queries { get; } = new();
         public List<int?> ReleaseYears { get; } = new();
         public List<int> SearchPageSizes { get; } = new();
+        public List<string> ProviderCountryCodes { get; } = new();
 
         public IReadOnlyList<MovieCard> SearchResults { get; set; } = Array.Empty<MovieCard>();
 
         public Dictionary<int, MovieDetails?> DetailsById { get; set; } = new();
 
         public Dictionary<int, IReadOnlyList<string>> ProvidersById { get; set; } = new();
+
+        public HashSet<int> ProviderFailures { get; set; } = new();
+
+        public bool CancelProviderLookups { get; set; }
 
         public Task<IReadOnlyList<MovieCard>> SearchAsync(string query, CancellationToken cancellationToken = default)
         {
@@ -206,6 +336,17 @@ public class GetRecommendationsUseCaseTests
         public Task<IReadOnlyList<string>> GetWatchProvidersAsync(int movieId, string countryCode, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
+            ProviderCountryCodes.Add(countryCode);
+            if (CancelProviderLookups)
+            {
+                throw new OperationCanceledException(cancellationToken);
+            }
+
+            if (ProviderFailures.Contains(movieId))
+            {
+                throw new InvalidOperationException("Provider lookup failed.");
+            }
+
             return Task.FromResult(ProvidersById.TryGetValue(movieId, out var providers) ? providers : Array.Empty<string>());
         }
 

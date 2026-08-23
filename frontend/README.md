@@ -19,11 +19,18 @@ $env:VITE_API_BASE_URL="http://localhost:5276"
 
 ```powershell
 npm test
+npm run lint
 npm run build
 ```
 
 ## Implementation Notes
 - `src/api` owns API URL construction and response/problem handling.
 - `src/types` mirrors the backend contract shape used by the client.
-- `src/components` contains reusable movie cards, poster fallback rendering, pagination, recommendations, and the details panel.
-- `App.tsx` coordinates page-level state for search, genre discovery, recommendation requests, shared release-year filtering, and watch-region changes.
+- `src/components` contains reusable movie cards, poster fallback rendering, pagination, recommendations, credits, and the details panel.
+- `src/features` owns abortable catalog, paged browsing, and movie-details state.
+- `App.tsx` composes feature state and coordinates shared release-year, recommendation, and watch-region inputs.
+
+## Credits
+
+Movie data and artwork are supplied by [The Movie Database (TMDB)](https://www.themoviedb.org).
+This product uses the TMDB API but is not endorsed or certified by TMDB.

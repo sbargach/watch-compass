@@ -490,6 +490,66 @@ public class ApiIntegrationTests
         document.RootElement.GetProperty("title").GetString().ShouldBe("Limit must be between 1 and 20.");
     }
 
+    [Test]
+    public async Task SearchEndpoint_WithOversizedQuery_ReturnsProblemDetails()
+    {
+        var query = new string('a', 101);
+
+        var response = await _client.GetAsync($"/api/movies/search?query={query}");
+
+        response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        document.RootElement.GetProperty("title").GetString()!.ShouldContain("100 characters");
+    }
+
+    [Test]
+    public async Task MovieDetailsEndpoint_WithInvalidCountryCode_ReturnsProblemDetails()
+    {
+        var response = await _client.GetAsync("/api/movies/100?countryCode=NLD");
+
+        response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        document.RootElement.GetProperty("title").GetString()!.ShouldContain("two-letter");
+    }
+
+    [Test]
+    public async Task SearchEndpoint_WhenTmdbIsUnavailable_ReturnsSanitizedServiceUnavailableProblem()
+    {
+        _server.Given(Request.Create()
+                .UsingGet()
+                .WithPath("/3/search/movie"))
+            .RespondWith(Response.Create()
+                .WithStatusCode((int)HttpStatusCode.ServiceUnavailable)
+                .WithHeader("Content-Type", "text/plain")
+                .WithBody("upstream-secret-detail"));
+
+        var response = await _client.GetAsync("/api/movies/search?query=test");
+
+        response.StatusCode.ShouldBe(HttpStatusCode.ServiceUnavailable);
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        document.RootElement.GetProperty("title").GetString().ShouldBe("Movie data is temporarily unavailable.");
+        document.RootElement.GetProperty("traceId").GetString().ShouldNotBeNullOrWhiteSpace();
+        document.RootElement.ToString().ShouldNotContain("upstream-secret-detail");
+    }
+
+    [Test]
+    public async Task ExceptionMiddleware_WhenClientCancels_DoesNotReturnServerError()
+    {
+        using var cancellation = new CancellationTokenSource();
+        cancellation.Cancel();
+        var context = new Microsoft.AspNetCore.Http.DefaultHttpContext
+        {
+            RequestAborted = cancellation.Token
+        };
+        var middleware = new WatchCompass.Api.Middleware.ExceptionHandlingMiddleware(
+            _ => throw new OperationCanceledException(cancellation.Token),
+            Microsoft.Extensions.Logging.Abstractions.NullLogger<WatchCompass.Api.Middleware.ExceptionHandlingMiddleware>.Instance);
+
+        await middleware.InvokeAsync(context);
+
+        context.Response.StatusCode.ShouldBe(499);
+    }
+
     private void StubSearch(string query, string body, int tmdbPage = 1, int? releaseYear = null)
     {
         var request = Request.Create()

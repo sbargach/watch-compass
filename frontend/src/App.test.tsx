@@ -125,6 +125,7 @@ describe("App", () => {
     await userEvent.click(selectMovieButton);
 
     await screen.findByText("Where to watch in Netherlands (NL)");
+    expect(screen.getByRole("heading", { level: 2, name: "Arrival" })).toHaveFocus();
     expect(screen.getByText("Videoland")).toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledTimes(5);
 
@@ -136,6 +137,10 @@ describe("App", () => {
 
     expect(screen.queryByText("Loading movie details...")).not.toBeInTheDocument();
     expect(screen.getByText("Apple TV")).toBeInTheDocument();
+
+    await userEvent.keyboard("{Escape}");
+    expect(screen.queryByRole("heading", { level: 2, name: "Arrival" })).not.toBeInTheDocument();
+    expect(selectMovieButton).toHaveFocus();
   });
 
   it("reloads provider availability when the watch region changes", async () => {
@@ -522,7 +527,7 @@ describe("App", () => {
     expect(screen.getByRole("button", { name: "Search" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Get recommendations" })).toBeDisabled();
     expect(searchSummary?.textContent).toContain("Fix the release year to refresh results.");
-    expect(screen.getByText(/Release year:/).textContent).toContain("Fix input.");
+    expect(screen.getByText(/Fix input from the main toolbar/)).toBeInTheDocument();
 
     await waitFor(() => {
       expect(fetchMock).toHaveBeenCalledTimes(4);

@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { MovieGrid } from "./MovieGrid";
 import type { MovieCard, MovieDetails } from "../types/movies";
 import { PosterArtwork } from "./PosterArtwork";
@@ -12,6 +13,7 @@ type MovieDetailsPanelProps = {
   similarError: string | null;
   watchRegionLabel: string;
   onClose: () => void;
+  onRetry: () => void;
   onSelectMovie: (movie: MovieCard) => void;
 };
 
@@ -25,14 +27,35 @@ export function MovieDetailsPanel({
   similarError,
   watchRegionLabel,
   onClose,
+  onRetry,
   onSelectMovie
 }: MovieDetailsPanelProps) {
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  const returnFocusRef = useRef<HTMLElement | null>(null);
   const movie = details ?? selectedMovie;
   const meta = buildMeta(movie);
   const hasProviders = details !== null && details.providers.length > 0;
 
+  useEffect(() => {
+    returnFocusRef.current = document.activeElement instanceof HTMLElement
+      ? document.activeElement
+      : null;
+    headingRef.current?.focus();
+    return () => returnFocusRef.current?.focus();
+  }, [selectedMovie.movieId]);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+
   return (
-    <section className="details-panel" aria-live="polite">
+    <section className="details-panel" aria-live="polite" aria-labelledby="movie-details-heading">
       <div
         className="details-backdrop"
         style={movie.backdropUrl ? { backgroundImage: `linear-gradient(180deg, rgba(19, 32, 27, 0.28), rgba(19, 32, 27, 0.9)), url(${movie.backdropUrl})` } : undefined}
@@ -52,7 +75,7 @@ export function MovieDetailsPanel({
           </div>
 
           <div className="details-copy">
-            <h2>{movie.title}</h2>
+            <h2 id="movie-details-heading" ref={headingRef} tabIndex={-1}>{movie.title}</h2>
             <p className="details-meta">{meta}</p>
             <p className="details-overview">{movie.overview?.trim() || "No overview available yet."}</p>
 
@@ -71,7 +94,12 @@ export function MovieDetailsPanel({
                 {details ? `Refreshing availability for ${watchRegionLabel}...` : "Loading movie details..."}
               </p>
             )}
-            {error && <p className="status-text status-error">{error}</p>}
+            {error && (
+              <div className="recovery-action" role="alert">
+                <p className="status-text status-error">{error}</p>
+                <button type="button" className="secondary-button" onClick={onRetry}>Retry details</button>
+              </div>
+            )}
 
             {!isLoading && !error && (
               <div className="providers-block">
@@ -99,7 +127,12 @@ export function MovieDetailsPanel({
           </div>
 
           {isSimilarLoading && <p className="status-text">Loading similar movies...</p>}
-          {similarError && <p className="status-text status-error">{similarError}</p>}
+          {similarError && (
+            <div className="recovery-action" role="alert">
+              <p className="status-text status-error">{similarError}</p>
+              <button type="button" className="secondary-button" onClick={onRetry}>Retry similar titles</button>
+            </div>
+          )}
           {!isSimilarLoading && !similarError && similarMovies.length === 0 && (
             <p className="status-text">No similar titles were returned.</p>
           )}
