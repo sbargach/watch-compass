@@ -40,8 +40,11 @@ export function MovieDetailsPanel({
     returnFocusRef.current = document.activeElement instanceof HTMLElement
       ? document.activeElement
       : null;
-    headingRef.current?.focus();
     return () => returnFocusRef.current?.focus();
+  }, []);
+
+  useEffect(() => {
+    headingRef.current?.focus();
   }, [selectedMovie.movieId]);
 
   useEffect(() => {
@@ -54,98 +57,118 @@ export function MovieDetailsPanel({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [onClose]);
 
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, []);
+
   return (
-    <section className="details-panel" aria-live="polite" aria-labelledby="movie-details-heading">
-      <div
-        className="details-backdrop"
-        style={movie.backdropUrl ? { backgroundImage: `linear-gradient(180deg, rgba(19, 32, 27, 0.28), rgba(19, 32, 27, 0.9)), url(${movie.backdropUrl})` } : undefined}
-      />
+    <div className="details-overlay" onClick={onClose}>
+      <section
+        className="details-panel"
+        role="dialog"
+        aria-modal="true"
+        aria-live="polite"
+        aria-labelledby="movie-details-heading"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div
+          className="details-image-backdrop"
+          style={movie.backdropUrl ? { backgroundImage: `linear-gradient(180deg, rgba(12, 18, 16, 0.18), rgba(12, 18, 16, 0.9)), url(${movie.backdropUrl})` } : undefined}
+        />
 
-      <div className="details-card">
-        <div className="details-header">
-          <p className="details-eyebrow">Selected movie</p>
-          <button type="button" className="details-close" onClick={onClose}>
-            Close
-          </button>
-        </div>
-
-        <div className="details-hero">
-          <div className="details-poster">
-            <PosterArtwork title={movie.title} posterUrl={movie.posterUrl} />
+        <div className="details-card">
+          <div className="details-header">
+            <p className="details-eyebrow">Selected movie</p>
+            <button type="button" className="details-close" onClick={onClose} aria-label="Close details">
+              Close
+            </button>
           </div>
 
-          <div className="details-copy">
-            <h2 id="movie-details-heading" ref={headingRef} tabIndex={-1}>{movie.title}</h2>
-            <p className="details-meta">{meta}</p>
-            <p className="details-overview">{movie.overview?.trim() || "No overview available yet."}</p>
-
-            {movie.genres.length > 0 && (
-              <div className="chip-list" aria-label="Genres">
-                {movie.genres.map((genre) => (
-                  <span key={genre} className="chip">
-                    {genre}
-                  </span>
-                ))}
+          <div className="details-scroll">
+            <div className="details-hero">
+              <div className="details-poster">
+                <PosterArtwork title={movie.title} posterUrl={movie.posterUrl} />
               </div>
-            )}
 
-            {isLoading && (
-              <p className="status-text">
-                {details ? `Refreshing availability for ${watchRegionLabel}...` : "Loading movie details..."}
-              </p>
-            )}
-            {error && (
-              <div className="recovery-action" role="alert">
-                <p className="status-text status-error">{error}</p>
-                <button type="button" className="secondary-button" onClick={onRetry}>Retry details</button>
-              </div>
-            )}
+              <div className="details-copy">
+                <h2 id="movie-details-heading" ref={headingRef} tabIndex={-1}>{movie.title}</h2>
+                <p className="details-meta">{meta}</p>
+                <p className="details-overview">{movie.overview?.trim() || "No overview available yet."}</p>
 
-            {!isLoading && !error && (
-              <div className="providers-block">
-                <p className="providers-label">Where to watch in {watchRegionLabel}</p>
-                {hasProviders ? (
-                  <div className="chip-list" aria-label="Providers">
-                    {details.providers.map((provider) => (
-                      <span key={provider} className="chip chip-provider">
-                        {provider}
+                {movie.genres.length > 0 && (
+                  <div className="chip-list" aria-label="Genres">
+                    {movie.genres.map((genre) => (
+                      <span key={genre} className="chip">
+                        {genre}
                       </span>
                     ))}
                   </div>
-                ) : (
-                  <p className="status-text">No provider data was returned for this title.</p>
+                )}
+
+                {isLoading && (
+                  <p className="status-text">
+                    {details ? `Refreshing availability for ${watchRegionLabel}...` : "Loading movie details..."}
+                  </p>
+                )}
+                {error && (
+                  <div className="recovery-action" role="alert">
+                    <p className="status-text status-error">{error}</p>
+                    <button type="button" className="secondary-button" onClick={onRetry}>Retry details</button>
+                  </div>
+                )}
+
+                {!isLoading && !error && (
+                  <div className="providers-block">
+                    <p className="providers-label">Where to watch in {watchRegionLabel}</p>
+                    {hasProviders ? (
+                      <div className="chip-list" aria-label="Providers">
+                        {details.providers.map((provider) => (
+                          <span key={provider} className="chip chip-provider">
+                            {provider}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="status-text">No provider data was returned for this title.</p>
+                    )}
+                  </div>
                 )}
               </div>
-            )}
-          </div>
-        </div>
-
-        <div className="details-section">
-          <div className="section-heading">
-            <h3>Similar titles</h3>
-            <p>Use the panel to keep exploring without losing your current results.</p>
-          </div>
-
-          {isSimilarLoading && <p className="status-text">Loading similar movies...</p>}
-          {similarError && (
-            <div className="recovery-action" role="alert">
-              <p className="status-text status-error">{similarError}</p>
-              <button type="button" className="secondary-button" onClick={onRetry}>Retry similar titles</button>
             </div>
-          )}
-          {!isSimilarLoading && !similarError && similarMovies.length === 0 && (
-            <p className="status-text">No similar titles were returned.</p>
-          )}
-          {similarMovies.length > 0 && (
-            <MovieGrid
-              movies={similarMovies}
-              onSelectMovie={onSelectMovie}
-              selectedMovieId={selectedMovie.movieId}
-            />
-          )}
+
+            <div className="details-section">
+              <div className="section-heading">
+                <h3>Similar titles</h3>
+                <p>Use the panel to keep exploring without losing your current results.</p>
+              </div>
+
+              {isSimilarLoading && <p className="status-text">Loading similar movies...</p>}
+              {similarError && (
+                <div className="recovery-action" role="alert">
+                  <p className="status-text status-error">{similarError}</p>
+                  <button type="button" className="secondary-button" onClick={onRetry}>Retry similar titles</button>
+                </div>
+              )}
+              {!isSimilarLoading && !similarError && similarMovies.length === 0 && (
+                <p className="status-text">No similar titles were returned.</p>
+              )}
+              {similarMovies.length > 0 && (
+                <MovieGrid
+                  movies={similarMovies}
+                  onSelectMovie={onSelectMovie}
+                  selectedMovieId={selectedMovie.movieId}
+                />
+              )}
+            </div>
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
+    </div>
   );
 }
 
