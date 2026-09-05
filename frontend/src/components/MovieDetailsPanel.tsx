@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { MovieGrid } from "./MovieGrid";
 import type { MovieCard, MovieDetails } from "../types/movies";
 import { PosterArtwork } from "./PosterArtwork";
+import { formatMovieMeta } from "../utils/movieFormatting";
 
 type MovieDetailsPanelProps = {
   selectedMovie: MovieCard;
@@ -33,7 +34,6 @@ export function MovieDetailsPanel({
   const headingRef = useRef<HTMLHeadingElement>(null);
   const returnFocusRef = useRef<HTMLElement | null>(null);
   const movie = details ?? selectedMovie;
-  const meta = buildMeta(movie);
   const hasProviders = details !== null && details.providers.length > 0;
 
   useEffect(() => {
@@ -97,7 +97,7 @@ export function MovieDetailsPanel({
 
               <div className="details-copy">
                 <h2 id="movie-details-heading" ref={headingRef} tabIndex={-1}>{movie.title}</h2>
-                <p className="details-meta">{meta}</p>
+                <p className="details-meta">{formatMovieMeta(movie)}</p>
                 <p className="details-overview">{movie.overview?.trim() || "No overview available yet."}</p>
 
                 {movie.genres.length > 0 && (
@@ -170,18 +170,4 @@ export function MovieDetailsPanel({
       </section>
     </div>
   );
-}
-
-function buildMeta(movie: MovieCard): string {
-  const meta: string[] = [];
-
-  if (movie.releaseYear) {
-    meta.push(String(movie.releaseYear));
-  }
-
-  if (movie.runtimeMinutes) {
-    meta.push(`${movie.runtimeMinutes} min`);
-  }
-
-  return meta.length > 0 ? meta.join(" | ") : "Runtime unavailable";
 }

@@ -9,7 +9,7 @@ type ApiProblem = {
 };
 
 export async function requestJson<T>(path: string, signal?: AbortSignal): Promise<T> {
-  const response = await fetch(`${apiBaseUrl}${path}`, {
+  const response = await fetchApi(`${apiBaseUrl}${path}`, {
     signal,
     headers: {
       Accept: "application/json"
@@ -24,7 +24,7 @@ export async function requestJson<T>(path: string, signal?: AbortSignal): Promis
 }
 
 export async function postJson<TResponse>(path: string, payload: unknown, signal?: AbortSignal): Promise<TResponse> {
-  const response = await fetch(`${apiBaseUrl}${path}`, {
+  const response = await fetchApi(`${apiBaseUrl}${path}`, {
     method: "POST",
     headers: {
       Accept: "application/json",
@@ -39,6 +39,22 @@ export async function postJson<TResponse>(path: string, payload: unknown, signal
   }
 
   return (await response.json()) as TResponse;
+}
+
+async function fetchApi(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+  try {
+    return await fetch(input, init);
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw error;
+    }
+
+    if (error instanceof TypeError) {
+      throw new Error("Could not reach the Watch Compass API. Start the backend and retry.");
+    }
+
+    throw error;
+  }
 }
 
 async function toApiError(response: Response): Promise<Error> {

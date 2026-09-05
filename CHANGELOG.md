@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.23.0] - 2026-09-05
+### Added
+- Added a hero-level compass picker that spins before selecting a random movie from the currently loaded catalog, search, discovery, and recommendation results.
+- Added focused frontend coverage for the compass picker loading, spinning, and selection behavior.
+
+### Changed
+- Reworked the frontend into a darker cinema-inspired visual system with stronger poster cards, warmer action states, and a more movie-fan-oriented first viewport.
+- Tuned the hero and compass copy to sound more direct and product-specific.
+- Centralized movie metadata formatting across cards, recommendations, details, and compass picks.
+- Improved responsive search-toolbar layout so stacked mobile controls use the full available width.
+- Replaced raw browser network failure text with local API recovery copy.
+
 ## [0.22.0] - 2026-08-30
 ### Changed
 - Reworked selected movie details into a fixed drawer so users can inspect titles from any feed without losing their place.

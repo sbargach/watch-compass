@@ -1,9 +1,10 @@
-import { useState, type ChangeEvent, type FormEvent } from "react";
+import { useMemo, useState, type ChangeEvent, type FormEvent } from "react";
 import { MovieDetailsPanel } from "./components/MovieDetailsPanel";
 import { MovieGrid } from "./components/MovieGrid";
 import { Pagination } from "./components/Pagination";
 import { RecommendationGrid } from "./components/RecommendationGrid";
 import { CreditsFooter } from "./components/CreditsFooter";
+import { CompassPickPanel } from "./components/CompassPickPanel";
 import { useCatalogOverview } from "./features/catalog/useCatalogOverview";
 import { CatalogFeedSection } from "./features/catalog/CatalogFeedSection";
 import { useMovieDetails } from "./features/details/useMovieDetails";
@@ -180,6 +181,35 @@ function App() {
   const hasSearchResults = (searchState.result?.items.length ?? 0) > 0;
   const hasDiscoverResults = (discoverState.result?.items.length ?? 0) > 0;
   const hasRecommendations = recommendationStateMatchesRequest && recommendationState.items.length > 0;
+  const compassMovies = useMemo(
+    () =>
+      getUniqueMovies([
+        ...nowPlayingState.items,
+        ...trendingState.items,
+        ...(discoverState.result?.items ?? []),
+        ...(searchState.result?.items ?? []),
+        ...(hasRecommendations ? recommendationState.items.map(toMovieCard) : [])
+      ]),
+    [
+      discoverState.result?.items,
+      hasRecommendations,
+      nowPlayingState.items,
+      recommendationState.items,
+      searchState.result?.items,
+      trendingState.items
+    ]
+  );
+  const isCompassLoading =
+    trendingState.isLoading ||
+    nowPlayingState.isLoading ||
+    (hasSearch && searchState.isLoading) ||
+    (discoverGenre !== null && discoverState.isLoading) ||
+    (recommendationStateMatchesRequest && recommendationState.isLoading);
+  const hasCompassError =
+    trendingState.error !== null ||
+    nowPlayingState.error !== null ||
+    (hasSearch && searchState.error !== null) ||
+    (discoverGenre !== null && discoverState.error !== null);
 
   return (
     <div className="app-shell">
@@ -189,9 +219,17 @@ function App() {
             <p className="hero-kicker">Watch Compass</p>
             <h1>Find something worth watching.</h1>
             <p className="hero-description">
-              Search movies, browse current releases, and build a shortlist around your mood and available time.
+              Search the catalog, browse current releases, and spin the compass when you need a pick for tonight.
             </p>
           </div>
+
+          <CompassPickPanel
+            movies={compassMovies}
+            selectedMovieId={selectedMovie?.movieId}
+            isCatalogLoading={isCompassLoading}
+            hasCatalogError={hasCompassError}
+            onSelectMovie={handleSelectMovie}
+          />
         </header>
 
         <section className="search-panel">
@@ -607,6 +645,18 @@ function toMovieCard(recommendation: Recommendation): MovieCard {
     releaseYear: recommendation.releaseYear,
     overview: recommendation.overview
   };
+}
+
+function getUniqueMovies(movies: MovieCard[]): MovieCard[] {
+  const moviesById = new Map<number, MovieCard>();
+
+  for (const movie of movies) {
+    if (!moviesById.has(movie.movieId)) {
+      moviesById.set(movie.movieId, movie);
+    }
+  }
+
+  return [...moviesById.values()];
 }
 
 function getReleaseYearFieldState(input: string): ReleaseYearFieldState {

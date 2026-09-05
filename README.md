@@ -1,7 +1,7 @@
 # Watch Compass
 
 [![CI](https://github.com/princ/watch-compass/actions/workflows/ci.yml/badge.svg)](https://github.com/princ/watch-compass/actions/workflows/ci.yml)
-![Version](https://img.shields.io/badge/version-0.22.0-0f766e)
+![Version](https://img.shields.io/badge/version-0.23.0-f2b84b)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 Watch Compass is a full-stack movie discovery app for exploring what to watch next. It combines TMDB-backed catalog search, genre discovery, now-playing and trending feeds, movie details, similar-title exploration, provider availability, and transparent mood-based recommendations.

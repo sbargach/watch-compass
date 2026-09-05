@@ -1,5 +1,6 @@
 import type { Recommendation } from "../types/movies";
 import { PosterArtwork } from "./PosterArtwork";
+import { formatMovieMeta } from "../utils/movieFormatting";
 
 type RecommendationGridProps = {
   recommendations: Recommendation[];
@@ -15,7 +16,6 @@ export function RecommendationGrid({
   return (
     <div className="recommendation-grid">
       {recommendations.map((recommendation) => {
-        const meta = buildMeta(recommendation);
         const isActive = selectedMovieId === recommendation.movieId;
 
         return (
@@ -39,7 +39,7 @@ export function RecommendationGrid({
               <div className="recommendation-card-header">
                 <div>
                   <h3>{recommendation.title}</h3>
-                  <p className="movie-meta">{meta}</p>
+                  <p className="movie-meta">{formatMovieMeta(recommendation)}</p>
                 </div>
 
                 {recommendation.providers.length > 0 && (
@@ -71,18 +71,4 @@ export function RecommendationGrid({
       })}
     </div>
   );
-}
-
-function buildMeta(recommendation: Recommendation): string {
-  const meta: string[] = [];
-
-  if (recommendation.releaseYear) {
-    meta.push(String(recommendation.releaseYear));
-  }
-
-  if (recommendation.runtimeMinutes) {
-    meta.push(`${recommendation.runtimeMinutes} min`);
-  }
-
-  return meta.length > 0 ? meta.join(" | ") : "Runtime unavailable";
 }

@@ -1,5 +1,6 @@
 import type { MovieCard } from "../types/movies";
 import { PosterArtwork } from "./PosterArtwork";
+import { formatMovieMeta } from "../utils/movieFormatting";
 
 type MovieTileProps = {
   movie: MovieCard;
@@ -8,14 +9,6 @@ type MovieTileProps = {
 };
 
 export function MovieTile({ movie, onSelect, isActive = false }: MovieTileProps) {
-  const meta: string[] = [];
-  if (movie.releaseYear) {
-    meta.push(String(movie.releaseYear));
-  }
-  if (movie.runtimeMinutes) {
-    meta.push(`${movie.runtimeMinutes} min`);
-  }
-
   const genreText = movie.genres.length > 0 ? movie.genres.slice(0, 3).join(" / ") : "Genre unavailable";
 
   const content = (
@@ -26,7 +19,7 @@ export function MovieTile({ movie, onSelect, isActive = false }: MovieTileProps)
 
       <div className="movie-tile-content">
         <h3>{movie.title}</h3>
-        <p className="movie-meta">{meta.length > 0 ? meta.join(" | ") : "Runtime unavailable"}</p>
+        <p className="movie-meta">{formatMovieMeta(movie)}</p>
         <p className="movie-genres">{genreText}</p>
         <p className="movie-overview">{movie.overview?.trim() || "No overview available yet."}</p>
       </div>
