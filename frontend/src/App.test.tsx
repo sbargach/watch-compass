@@ -93,6 +93,7 @@ describe("App", () => {
   it("does not reset the panel when the active movie is selected again", async () => {
     fetchMock.mockImplementation(async (input) => {
       const url = String(input);
+      if (url.endsWith("/api/app-info")) return createJsonResponse({ catalogMode: "tmdb" });
 
       if (url.endsWith("/api/movies/trending?limit=12")) {
         return createJsonResponse({ items: [trendingMovie] });
@@ -127,12 +128,12 @@ describe("App", () => {
     await screen.findByText("Where to watch in Netherlands (NL)");
     expect(screen.getByRole("heading", { level: 2, name: "Arrival" })).toHaveFocus();
     expect(screen.getByText("Videoland")).toBeInTheDocument();
-    expect(fetchMock).toHaveBeenCalledTimes(5);
+    expect(fetchMock).toHaveBeenCalledTimes(6);
 
     await userEvent.click(selectMovieButton);
 
     await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledTimes(5);
+      expect(fetchMock).toHaveBeenCalledTimes(6);
     });
 
     expect(screen.queryByText("Loading movie details...")).not.toBeInTheDocument();
@@ -146,6 +147,7 @@ describe("App", () => {
   it("reloads provider availability when the watch region changes", async () => {
     fetchMock.mockImplementation(async (input) => {
       const url = String(input);
+      if (url.endsWith("/api/app-info")) return createJsonResponse({ catalogMode: "tmdb" });
 
       if (url.endsWith("/api/movies/trending?limit=12")) {
         return createJsonResponse({ items: [trendingMovie] });
@@ -188,13 +190,14 @@ describe("App", () => {
     expect(screen.queryByText("Videoland")).not.toBeInTheDocument();
 
     await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledTimes(6);
+      expect(fetchMock).toHaveBeenCalledTimes(7);
     });
   });
 
   it("renders the now playing section from the backend", async () => {
     fetchMock.mockImplementation(async (input) => {
       const url = String(input);
+      if (url.endsWith("/api/app-info")) return createJsonResponse({ catalogMode: "tmdb" });
 
       if (url.endsWith("/api/movies/trending?limit=12")) {
         return createJsonResponse({ items: [trendingMovie] });
@@ -222,6 +225,7 @@ describe("App", () => {
   it("submits the recommendation form and renders recommendation results", async () => {
     fetchMock.mockImplementation(async (input, init) => {
       const url = String(input);
+      if (url.endsWith("/api/app-info")) return createJsonResponse({ catalogMode: "tmdb" });
 
       if (url.endsWith("/api/movies/trending?limit=12")) {
         return createJsonResponse({ items: [trendingMovie] });
@@ -264,7 +268,7 @@ describe("App", () => {
     await userEvent.type(screen.getByLabelText("Release year"), "2020");
     await userEvent.clear(screen.getByLabelText("Time budget (minutes)"));
     await userEvent.type(screen.getByLabelText("Time budget (minutes)"), "95");
-    await userEvent.type(screen.getByLabelText("Optional hint"), "time loop");
+    await userEvent.type(screen.getByLabelText("Optional title hint"), "time loop");
     await userEvent.click(screen.getByRole("button", { name: "Avoid genre Horror" }));
     await userEvent.click(screen.getByRole("button", { name: "Get recommendations" }));
 
@@ -277,6 +281,7 @@ describe("App", () => {
   it("hides stale recommendation results when the shared release year changes", async () => {
     fetchMock.mockImplementation(async (input, init) => {
       const url = String(input);
+      if (url.endsWith("/api/app-info")) return createJsonResponse({ catalogMode: "tmdb" });
 
       if (url.endsWith("/api/movies/trending?limit=12")) {
         return createJsonResponse({ items: [trendingMovie] });
@@ -318,13 +323,14 @@ describe("App", () => {
     expect(screen.queryByText("Palm Springs")).not.toBeInTheDocument();
 
     await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledTimes(4);
+      expect(fetchMock).toHaveBeenCalledTimes(5);
     });
   });
 
   it("hides stale recommendation results when the watch region changes", async () => {
     fetchMock.mockImplementation(async (input, init) => {
       const url = String(input);
+      if (url.endsWith("/api/app-info")) return createJsonResponse({ catalogMode: "tmdb" });
 
       if (url.endsWith("/api/movies/trending?limit=12")) {
         return createJsonResponse({ items: [trendingMovie] });
@@ -363,13 +369,14 @@ describe("App", () => {
     expect(screen.queryByText("Palm Springs")).not.toBeInTheDocument();
 
     await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledTimes(4);
+      expect(fetchMock).toHaveBeenCalledTimes(5);
     });
   });
 
   it("loads genre discovery results and paginates them", async () => {
     fetchMock.mockImplementation(async (input) => {
       const url = String(input);
+      if (url.endsWith("/api/app-info")) return createJsonResponse({ catalogMode: "tmdb" });
 
       if (url.endsWith("/api/movies/trending?limit=12")) {
         return createJsonResponse({ items: [trendingMovie] });
@@ -424,13 +431,14 @@ describe("App", () => {
     await screen.findByText("Palm Springs");
 
     await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledTimes(5);
+      expect(fetchMock).toHaveBeenCalledTimes(6);
     });
   });
 
   it("includes the release year filter when searching", async () => {
     fetchMock.mockImplementation(async (input) => {
       const url = String(input);
+      if (url.endsWith("/api/app-info")) return createJsonResponse({ catalogMode: "tmdb" });
 
       if (url.endsWith("/api/movies/trending?limit=12")) {
         return createJsonResponse({ items: [trendingMovie] });
@@ -477,6 +485,7 @@ describe("App", () => {
   it("uses the input as the single source of truth when the release year is invalid", async () => {
     fetchMock.mockImplementation(async (input) => {
       const url = String(input);
+      if (url.endsWith("/api/app-info")) return createJsonResponse({ catalogMode: "tmdb" });
 
       if (url.endsWith("/api/movies/trending?limit=12")) {
         return createJsonResponse({ items: [trendingMovie] });
@@ -530,7 +539,7 @@ describe("App", () => {
     expect(screen.getByText(/Fix input from the main toolbar/)).toBeInTheDocument();
 
     await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledTimes(4);
+      expect(fetchMock).toHaveBeenCalledTimes(5);
     });
   });
 });

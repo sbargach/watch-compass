@@ -1,5 +1,6 @@
 import { postJson, requestJson } from "./http";
 import type {
+  AppInfo,
   GenresResponse,
   MovieDetails,
   NowPlayingMoviesResponse,
@@ -84,4 +85,12 @@ export async function getRecommendations(
   signal?: AbortSignal
 ): Promise<RecommendationsResponse> {
   return postJson<RecommendationsResponse>("/api/recommendations", request, signal);
+}
+
+export async function getAppInfo(signal?: AbortSignal): Promise<AppInfo> {
+  const info = await requestJson<AppInfo>("/api/app-info", signal);
+  if (info.catalogMode !== "demo" && info.catalogMode !== "tmdb") {
+    throw new Error("Unknown catalog mode.");
+  }
+  return info;
 }

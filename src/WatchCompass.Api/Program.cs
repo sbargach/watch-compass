@@ -7,6 +7,8 @@ using WatchCompass.Api.Middleware;
 using WatchCompass.Api.Serialization;
 using WatchCompass.Application.DependencyInjection;
 using WatchCompass.Infrastructure.DependencyInjection;
+using WatchCompass.Infrastructure.Movies;
+using WatchCompass.Contracts;
 
 var builder = WebApplication.CreateBuilder(args);
 const string FrontendCorsPolicy = "Frontend";
@@ -94,6 +96,9 @@ app.MapGet("/health", () => Results.Text("ok", "text/plain"))
     .Produces(StatusCodes.Status200OK);
 
 app.MapControllers();
+
+app.MapGet("/api/app-info", (CatalogOptions options) => new AppInfoResponse(options.Mode))
+    .WithName("AppInfo");
 
 await app.RunAsync();
 

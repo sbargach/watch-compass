@@ -1,5 +1,3 @@
-@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap");
-
 :root {
   --bg: #100d0b;
   --bg-deep: #070605;
@@ -19,7 +17,7 @@
   --warning: #dc2626;
   --focus: rgba(31, 183, 155, 0.5);
   --shadow: 0 24px 70px rgba(0, 0, 0, 0.34);
-  font-family: "IBM Plex Sans", Arial, sans-serif;
+  font-family: "Segoe UI", system-ui, sans-serif;
   color: var(--text);
   background-color: var(--bg);
   font-synthesis: none;
@@ -136,7 +134,7 @@ button {
 
 .hero h1 {
   margin: 0;
-  font-family: "Space Grotesk", Arial, sans-serif;
+  font-family: "Segoe UI", system-ui, sans-serif;
   font-size: 3.35rem;
   line-height: 1.04;
   color: var(--text-strong);
@@ -239,7 +237,7 @@ button {
 
 .compass-copy h2 {
   margin: 0;
-  font-family: "Space Grotesk", Arial, sans-serif;
+  font-family: "Segoe UI", system-ui, sans-serif;
   font-size: 1.35rem;
   line-height: 1.18;
   color: var(--text-strong);
@@ -416,7 +414,7 @@ button {
 .details-copy h2,
 .details-section h3 {
   margin: 0;
-  font-family: "Space Grotesk", Arial, sans-serif;
+  font-family: "Segoe UI", system-ui, sans-serif;
 }
 
 .recommendation-panel .panel-kicker,
@@ -722,7 +720,7 @@ button {
   background:
     linear-gradient(145deg, rgba(31, 183, 155, 0.94), rgba(242, 184, 75, 0.9)),
     #1fb79b;
-  font-family: "Space Grotesk", Arial, sans-serif;
+  font-family: "Segoe UI", system-ui, sans-serif;
   font-size: 2rem;
   font-weight: 700;
 }
@@ -731,7 +729,7 @@ button {
 .recommendation-card-content h3 {
   margin: 0;
   color: var(--text-strong);
-  font-family: "Space Grotesk", Arial, sans-serif;
+  font-family: "Segoe UI", system-ui, sans-serif;
 }
 
 .movie-tile-content h3 {
@@ -1266,4 +1264,22 @@ button {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+.catalog-notice {
+  margin-bottom: 1.5rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid #b8914b;
+  border-radius: 0.75rem;
+  background: #29271f;
+  color: #f3dfb9;
+}
+
+.catalog-notice p {
+  margin: 0.4rem 0 0;
+  line-height: 1.5;
+}
+
+.catalog-notice button {
+  margin-top: 0.75rem;
 }

@@ -7,6 +7,7 @@ using Microsoft.Extensions.Http.Resilience;
 using Polly;
 using WatchCompass.Application.Abstractions.Movies;
 using WatchCompass.Infrastructure.Movies;
+using WatchCompass.Infrastructure.Movies.Demo;
 using WatchCompass.Infrastructure.Movies.Tmdb;
 
 namespace WatchCompass.Infrastructure.DependencyInjection;
@@ -15,6 +16,14 @@ public static class InfrastructureServiceCollectionExtensions
 {
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
+        var catalogOptions = new CatalogOptions(configuration["Catalog:Mode"] ?? "Tmdb");
+        services.AddSingleton(catalogOptions);
+        if (catalogOptions.IsDemo)
+        {
+            services.AddSingleton<IMovieCatalog, DemoMovieCatalog>();
+            return services;
+        }
+
         services.AddMemoryCache();
         services.Configure<MovieCatalogCacheOptions>(configuration.GetSection("Caching:MovieCatalog"));
         services.AddOptions<TmdbOptions>()

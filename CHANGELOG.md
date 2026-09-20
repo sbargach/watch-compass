@@ -4,6 +4,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.24.0] - 2026-09-20
+### Added
+- Explicit key-free demo mode using the real API and application use cases, with 24 fictional films, bundled SVG posters, and regional sample availability.
+- Backend-reported catalog mode, visible sample-data labels, and a retry action when catalog status cannot be verified.
+- Demo launch profile, reviewer walkthrough, and regression coverage for demo endpoints, startup configuration, and recommendation constraints.
+
+### Fixed
+- Mood-only recommendations now discover the mapped genre instead of searching titles for genre words.
+- Title-hint recommendations must also match the selected mood genre; candidates with unverified genres or runtime are omitted.
+- Recommendation explanations describe the verified runtime and simple genre rule. The input now accurately asks for a title hint.
+- Undefined numeric mood values return a validation error.
+- Updated the transitive js-yaml dependency to 4.3.2 to resolve a high-severity advisory.
+
+### Changed
+- Replaced the remote font import with a system font stack so the demo has no external font dependency.
+- Removed the unused empty catalog implementation and documented demo limitations and known accessibility/component follow-ups.
+- Corrected retry documentation to describe exponential backoff and the jitter toggle.
+
 ## [0.23.0] - 2026-09-05
 ### Added
 - Added a hero-level compass picker that spins before selecting a random movie from the currently loaded catalog, search, discovery, and recommendation results.

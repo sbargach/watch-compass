@@ -13,6 +13,7 @@ type MovieDetailsPanelProps = {
   error: string | null;
   similarError: string | null;
   watchRegionLabel: string;
+  catalogMode?: "demo" | "tmdb";
   onClose: () => void;
   onRetry: () => void;
   onSelectMovie: (movie: MovieCard) => void;
@@ -27,6 +28,7 @@ export function MovieDetailsPanel({
   error,
   similarError,
   watchRegionLabel,
+  catalogMode,
   onClose,
   onRetry,
   onSelectMovie
@@ -124,7 +126,7 @@ export function MovieDetailsPanel({
 
                 {!isLoading && !error && (
                   <div className="providers-block">
-                    <p className="providers-label">Where to watch in {watchRegionLabel}</p>
+                    <p className="providers-label">{catalogMode === "demo" ? "Simulated availability" : "Where to watch"} in {watchRegionLabel}</p>
                     {hasProviders ? (
                       <div className="chip-list" aria-label="Providers">
                         {details.providers.map((provider) => (

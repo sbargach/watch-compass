@@ -21,7 +21,7 @@ public sealed class RecommendationsController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<GetRecommendationsResponse>> Create([FromBody] GetRecommendationsRequest request, CancellationToken cancellationToken)
     {
-        if (!Enum.TryParse<Mood>(request.Mood?.Trim(), true, out var mood))
+        if (!Enum.TryParse<Mood>(request.Mood?.Trim(), true, out var mood) || !Enum.IsDefined(mood))
         {
             return ToProblem(new ProblemDetails
             {

@@ -1,0 +1,739 @@
+{
+  "movies": [
+    {
+      "details": {
+        "movieId": 1001,
+        "title": "The Last Stroopwafel",
+        "runtimeMinutes": 94,
+        "genres": [
+          "Comedy"
+        ],
+        "posterUrl": "/demo/posters/1001.svg",
+        "backdropUrl": null,
+        "releaseYear": 2024,
+        "overview": "Two rival market bakers must share a stall during the busiest weekend of the year."
+      },
+      "providers": {
+        "NL": [
+          "Canal Cinema (sample)"
+        ],
+        "US": [
+          "Evening Screen (sample)"
+        ],
+        "GB": [
+          "Picture House (sample)"
+        ]
+      },
+      "similarIds": [
+        1002,
+        1003,
+        1004
+      ]
+    },
+    {
+      "details": {
+        "movieId": 1002,
+        "title": "The Borrowed Bicycle",
+        "runtimeMinutes": 103,
+        "genres": [
+          "Comedy"
+        ],
+        "posterUrl": "/demo/posters/1002.svg",
+        "backdropUrl": null,
+        "releaseYear": 2024,
+        "overview": "A borrowed cargo bike sends a meticulous teacher on a citywide search for its owner."
+      },
+      "providers": {
+        "NL": [
+          "Canal Cinema (sample)"
+        ],
+        "US": [
+          "Evening Screen (sample)"
+        ],
+        "GB": [
+          "Picture House (sample)"
+        ]
+      },
+      "similarIds": [
+        1001,
+        1003,
+        1004
+      ]
+    },
+    {
+      "details": {
+        "movieId": 1003,
+        "title": "The Wrong Wedding",
+        "runtimeMinutes": 87,
+        "genres": [
+          "Comedy"
+        ],
+        "posterUrl": "/demo/posters/1003.svg",
+        "backdropUrl": null,
+        "releaseYear": 2022,
+        "overview": "A small-town band arrives at the wrong reception and decides to stay for one song."
+      },
+      "providers": {
+        "NL": [
+          "Canal Cinema (sample)"
+        ],
+        "US": [
+          "Evening Screen (sample)"
+        ],
+        "GB": [
+          "Picture House (sample)"
+        ]
+      },
+      "similarIds": [
+        1001,
+        1002,
+        1004
+      ]
+    },
+    {
+      "details": {
+        "movieId": 1004,
+        "title": "The Midnight Bakery",
+        "runtimeMinutes": 99,
+        "genres": [
+          "Comedy"
+        ],
+        "posterUrl": "/demo/posters/1004.svg",
+        "backdropUrl": null,
+        "releaseYear": 2023,
+        "overview": "Three night-shift bakers enter a breakfast competition without telling their boss."
+      },
+      "providers": {
+        "NL": [
+          "Canal Cinema (sample)"
+        ],
+        "US": [
+          "Evening Screen (sample)"
+        ],
+        "GB": [
+          "Picture House (sample)"
+        ]
+      },
+      "similarIds": [
+        1001,
+        1002,
+        1003
+      ]
+    },
+    {
+      "details": {
+        "movieId": 1005,
+        "title": "The Quiet Carriage",
+        "runtimeMinutes": 91,
+        "genres": [
+          "Comedy"
+        ],
+        "posterUrl": "/demo/posters/1005.svg",
+        "backdropUrl": null,
+        "releaseYear": 2021,
+        "overview": "A travelling choir tries to keep a promise of silence on the train to its final audition."
+      },
+      "providers": {
+        "NL": [
+          "Canal Cinema (sample)"
+        ],
+        "US": [
+          "Evening Screen (sample)"
+        ],
+        "GB": [
+          "Picture House (sample)"
+        ]
+      },
+      "similarIds": [
+        1001,
+        1002,
+        1003
+      ]
+    },
+    {
+      "details": {
+        "movieId": 1006,
+        "title": "The Accidental Mayor",
+        "runtimeMinutes": 112,
+        "genres": [
+          "Comedy"
+        ],
+        "posterUrl": "/demo/posters/1006.svg",
+        "backdropUrl": null,
+        "releaseYear": 2025,
+        "overview": "A village elects a reluctant librarian after a joke campaign gets out of hand."
+      },
+      "providers": {
+        "NL": [
+          "Canal Cinema (sample)"
+        ],
+        "US": [
+          "Evening Screen (sample)"
+        ],
+        "GB": [
+          "Picture House (sample)"
+        ]
+      },
+      "similarIds": [
+        1001,
+        1002,
+        1003
+      ]
+    },
+    {
+      "details": {
+        "movieId": 1007,
+        "title": "The Spare Room",
+        "runtimeMinutes": 96,
+        "genres": [
+          "Comedy"
+        ],
+        "posterUrl": "/demo/posters/1007.svg",
+        "backdropUrl": null,
+        "releaseYear": 2020,
+        "overview": "Two flatmates secretly sublet the same room to two very different visiting relatives."
+      },
+      "providers": {
+        "NL": [
+          "Canal Cinema (sample)"
+        ],
+        "US": [
+          "Evening Screen (sample)"
+        ],
+        "GB": [
+          "Picture House (sample)"
+        ]
+      },
+      "similarIds": [
+        1001,
+        1002,
+        1003
+      ]
+    },
+    {
+      "details": {
+        "movieId": 1008,
+        "title": "The Floating Cafe",
+        "runtimeMinutes": 108,
+        "genres": [
+          "Comedy"
+        ],
+        "posterUrl": "/demo/posters/1008.svg",
+        "backdropUrl": null,
+        "releaseYear": 2024,
+        "overview": "A cafe owner discovers that running a business on a canal boat requires learning to steer."
+      },
+      "providers": {
+        "NL": [
+          "Canal Cinema (sample)"
+        ],
+        "US": [
+          "Evening Screen (sample)"
+        ],
+        "GB": [
+          "Picture House (sample)"
+        ]
+      },
+      "similarIds": [
+        1001,
+        1002,
+        1003
+      ]
+    },
+    {
+      "details": {
+        "movieId": 1009,
+        "title": "The Rain Check",
+        "runtimeMinutes": 88,
+        "genres": [
+          "Comedy"
+        ],
+        "posterUrl": "/demo/posters/1009.svg",
+        "backdropUrl": null,
+        "releaseYear": 2022,
+        "overview": "A weather presenter plans an outdoor proposal during a week of spectacularly wrong forecasts."
+      },
+      "providers": {
+        "NL": [
+          "Canal Cinema (sample)"
+        ],
+        "US": [
+          "Evening Screen (sample)"
+        ],
+        "GB": [
+          "Picture House (sample)"
+        ]
+      },
+      "similarIds": [
+        1001,
+        1002,
+        1003
+      ]
+    },
+    {
+      "details": {
+        "movieId": 1010,
+        "title": "The Small Parade",
+        "runtimeMinutes": 102,
+        "genres": [
+          "Comedy"
+        ],
+        "posterUrl": "/demo/posters/1010.svg",
+        "backdropUrl": null,
+        "releaseYear": 2023,
+        "overview": "A retired bus driver recruits an unlikely marching band to save the neighbourhood festival."
+      },
+      "providers": {
+        "NL": [
+          "Canal Cinema (sample)"
+        ],
+        "US": [
+          "Evening Screen (sample)"
+        ],
+        "GB": [
+          "Picture House (sample)"
+        ]
+      },
+      "similarIds": [
+        1001,
+        1002,
+        1003
+      ]
+    },
+    {
+      "details": {
+        "movieId": 1011,
+        "title": "The Lost Suitcase",
+        "runtimeMinutes": 97,
+        "genres": [
+          "Comedy"
+        ],
+        "posterUrl": "/demo/posters/1011.svg",
+        "backdropUrl": null,
+        "releaseYear": 2025,
+        "overview": "Identical suitcases turn a business trip into an accidental costume-party tour."
+      },
+      "providers": {
+        "NL": [
+          "Canal Cinema (sample)"
+        ],
+        "US": [
+          "Evening Screen (sample)"
+        ],
+        "GB": [
+          "Picture House (sample)"
+        ]
+      },
+      "similarIds": [
+        1001,
+        1002,
+        1003
+      ]
+    },
+    {
+      "details": {
+        "movieId": 1012,
+        "title": "The Neighbourhood Band",
+        "runtimeMinutes": 115,
+        "genres": [
+          "Comedy"
+        ],
+        "posterUrl": "/demo/posters/1012.svg",
+        "backdropUrl": null,
+        "releaseYear": 2021,
+        "overview": "Apartment neighbours form a band to win back the rehearsal room beneath their building."
+      },
+      "providers": {
+        "NL": [
+          "Canal Cinema (sample)"
+        ],
+        "US": [
+          "Evening Screen (sample)"
+        ],
+        "GB": [
+          "Picture House (sample)"
+        ]
+      },
+      "similarIds": [
+        1001,
+        1002,
+        1003
+      ]
+    },
+    {
+      "details": {
+        "movieId": 1013,
+        "title": "The Long Weekend",
+        "runtimeMinutes": 142,
+        "genres": [
+          "Comedy"
+        ],
+        "posterUrl": "/demo/posters/1013.svg",
+        "backdropUrl": null,
+        "releaseYear": 2020,
+        "overview": "An extended family keeps missing the last ferry home from its annual island reunion."
+      },
+      "providers": {
+        "NL": [
+          "Canal Cinema (sample)"
+        ],
+        "US": [
+          "Evening Screen (sample)"
+        ],
+        "GB": [
+          "Picture House (sample)"
+        ]
+      },
+      "similarIds": [
+        1001,
+        1002,
+        1003
+      ]
+    },
+    {
+      "details": {
+        "movieId": 1014,
+        "title": "Letters from Delft",
+        "runtimeMinutes": 116,
+        "genres": [
+          "Drama"
+        ],
+        "posterUrl": "/demo/posters/1014.svg",
+        "backdropUrl": null,
+        "releaseYear": 2024,
+        "overview": "An archivist returns a box of undelivered letters and reconnects a scattered community."
+      },
+      "providers": {
+        "NL": [
+          "Canal Cinema (sample)"
+        ],
+        "US": [
+          "Evening Screen (sample)"
+        ],
+        "GB": [
+          "Picture House (sample)"
+        ]
+      },
+      "similarIds": [
+        1015,
+        1016,
+        1017
+      ]
+    },
+    {
+      "details": {
+        "movieId": 1015,
+        "title": "Northbound Windows",
+        "runtimeMinutes": 108,
+        "genres": [
+          "Drama"
+        ],
+        "posterUrl": "/demo/posters/1015.svg",
+        "backdropUrl": null,
+        "releaseYear": 2022,
+        "overview": "A train conductor spends her final working week revisiting the passengers who changed her life."
+      },
+      "providers": {
+        "NL": [
+          "Canal Cinema (sample)"
+        ],
+        "US": [
+          "Evening Screen (sample)"
+        ],
+        "GB": [
+          "Picture House (sample)"
+        ]
+      },
+      "similarIds": [
+        1014,
+        1016,
+        1017
+      ]
+    },
+    {
+      "details": {
+        "movieId": 1016,
+        "title": "After the Tide",
+        "runtimeMinutes": 97,
+        "genres": [
+          "Drama"
+        ],
+        "posterUrl": "/demo/posters/1016.svg",
+        "backdropUrl": null,
+        "releaseYear": 2023,
+        "overview": "Two siblings restore their father's boat while deciding what to do with the family workshop."
+      },
+      "providers": {
+        "NL": [
+          "Canal Cinema (sample)"
+        ],
+        "US": [
+          "Evening Screen (sample)"
+        ],
+        "GB": [
+          "Picture House (sample)"
+        ]
+      },
+      "similarIds": [
+        1014,
+        1015,
+        1017
+      ]
+    },
+    {
+      "details": {
+        "movieId": 1017,
+        "title": "A Map of Home",
+        "runtimeMinutes": 149,
+        "genres": [
+          "Drama"
+        ],
+        "posterUrl": "/demo/posters/1017.svg",
+        "backdropUrl": null,
+        "releaseYear": 2021,
+        "overview": "A cartographer returns to the neighbourhood she left and finds its familiar boundaries have shifted."
+      },
+      "providers": {
+        "NL": [
+          "Canal Cinema (sample)"
+        ],
+        "US": [
+          "Evening Screen (sample)"
+        ],
+        "GB": [
+          "Picture House (sample)"
+        ]
+      },
+      "similarIds": [
+        1014,
+        1015,
+        1016
+      ]
+    },
+    {
+      "details": {
+        "movieId": 1018,
+        "title": "Signal at Eleven",
+        "runtimeMinutes": 101,
+        "genres": [
+          "Thriller"
+        ],
+        "posterUrl": "/demo/posters/1018.svg",
+        "backdropUrl": null,
+        "releaseYear": 2024,
+        "overview": "A radio technician hears tomorrow's emergency broadcast during a routine overnight repair."
+      },
+      "providers": {
+        "NL": [
+          "Canal Cinema (sample)"
+        ],
+        "US": [
+          "Evening Screen (sample)"
+        ],
+        "GB": [
+          "Picture House (sample)"
+        ]
+      },
+      "similarIds": [
+        1019,
+        1020,
+        1021
+      ]
+    },
+    {
+      "details": {
+        "movieId": 1019,
+        "title": "Night Crossing",
+        "runtimeMinutes": 112,
+        "genres": [
+          "Thriller"
+        ],
+        "posterUrl": "/demo/posters/1019.svg",
+        "backdropUrl": null,
+        "releaseYear": 2022,
+        "overview": "A ferry operator spots the same passenger on both shores before the boat has departed."
+      },
+      "providers": {
+        "NL": [
+          "Canal Cinema (sample)"
+        ],
+        "US": [
+          "Evening Screen (sample)"
+        ],
+        "GB": [
+          "Picture House (sample)"
+        ]
+      },
+      "similarIds": [
+        1018,
+        1020,
+        1021
+      ]
+    },
+    {
+      "details": {
+        "movieId": 1020,
+        "title": "The Glass Platform",
+        "runtimeMinutes": 95,
+        "genres": [
+          "Thriller"
+        ],
+        "posterUrl": "/demo/posters/1020.svg",
+        "backdropUrl": null,
+        "releaseYear": 2025,
+        "overview": "A station cleaner finds a timetable predicting incidents that have not happened yet."
+      },
+      "providers": {
+        "NL": [
+          "Canal Cinema (sample)"
+        ],
+        "US": [
+          "Evening Screen (sample)"
+        ],
+        "GB": [
+          "Picture House (sample)"
+        ]
+      },
+      "similarIds": [
+        1018,
+        1019,
+        1021
+      ]
+    },
+    {
+      "details": {
+        "movieId": 1021,
+        "title": "Last Lock",
+        "runtimeMinutes": 138,
+        "genres": [
+          "Thriller"
+        ],
+        "posterUrl": "/demo/posters/1021.svg",
+        "backdropUrl": null,
+        "releaseYear": 2023,
+        "overview": "An engineer must trace a series of canal-lock failures before the city floods."
+      },
+      "providers": {
+        "NL": [
+          "Canal Cinema (sample)"
+        ],
+        "US": [
+          "Evening Screen (sample)"
+        ],
+        "GB": [
+          "Picture House (sample)"
+        ]
+      },
+      "similarIds": [
+        1018,
+        1019,
+        1020
+      ]
+    },
+    {
+      "details": {
+        "movieId": 1022,
+        "title": "Room Below the Dunes",
+        "runtimeMinutes": 89,
+        "genres": [
+          "Horror"
+        ],
+        "posterUrl": "/demo/posters/1022.svg",
+        "backdropUrl": null,
+        "releaseYear": 2024,
+        "overview": "A coastal survey team uncovers a sealed room that appears on none of its maps."
+      },
+      "providers": {
+        "NL": [
+          "Canal Cinema (sample)"
+        ],
+        "US": [
+          "Evening Screen (sample)"
+        ],
+        "GB": [
+          "Picture House (sample)"
+        ]
+      },
+      "similarIds": [
+        1023,
+        1024
+      ]
+    },
+    {
+      "details": {
+        "movieId": 1023,
+        "title": "The Empty Lighthouse",
+        "runtimeMinutes": 104,
+        "genres": [
+          "Horror"
+        ],
+        "posterUrl": "/demo/posters/1023.svg",
+        "backdropUrl": null,
+        "releaseYear": 2021,
+        "overview": "A keeper returns to an abandoned lighthouse whose lamp has begun turning on by itself."
+      },
+      "providers": {
+        "NL": [
+          "Canal Cinema (sample)"
+        ],
+        "US": [
+          "Evening Screen (sample)"
+        ],
+        "GB": [
+          "Picture House (sample)"
+        ]
+      },
+      "similarIds": [
+        1022,
+        1024
+      ]
+    },
+    {
+      "details": {
+        "movieId": 1024,
+        "title": "When the Reeds Whisper",
+        "runtimeMinutes": 117,
+        "genres": [
+          "Horror"
+        ],
+        "posterUrl": "/demo/posters/1024.svg",
+        "backdropUrl": null,
+        "releaseYear": 2022,
+        "overview": "Campers follow a familiar voice through the marsh after all their radios lose power."
+      },
+      "providers": {},
+      "similarIds": [
+        1022,
+        1023
+      ]
+    }
+  ],
+  "trendingIds": [
+    1001,
+    1014,
+    1018,
+    1022,
+    1002,
+    1015,
+    1019,
+    1023,
+    1003,
+    1016,
+    1020,
+    1024
+  ],
+  "nowPlayingIds": [
+    1008,
+    1006,
+    1011,
+    1020,
+    1018,
+    1001,
+    1014,
+    1022,
+    1002,
+    1019,
+    1004,
+    1016
+  ]
+}

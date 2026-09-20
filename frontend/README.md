@@ -1,36 +1,46 @@
 # Watch Compass Frontend
 
-React + TypeScript client for Watch Compass. The frontend is intentionally thin: it renders API state, validates shared inputs before requests, and keeps movie details, provider availability, pagination, and recommendation constraints visible to the user.
+React and TypeScript client for Watch Compass. Catalog requests go through the real ASP.NET Core API in both demo and live modes.
 
-## Local Development
+## Local development
 
-```powershell
-npm install
+Start the backend from the repository root:
+
+```sh
+dotnet run --project src/WatchCompass.Api --launch-profile Demo
+```
+
+Then in this directory:
+
+```sh
+npm ci
 npm run dev
 ```
 
-The client defaults to `http://localhost:5276`. Override the API target when needed:
+Open [localhost:5173](http://localhost:5173). The client defaults to `http://localhost:5276`; set `VITE_API_BASE_URL` before starting Vite to change it.
 
-```powershell
-$env:VITE_API_BASE_URL="http://localhost:5276"
-```
+The backend's `/api/app-info` response controls the demo notice, feed labels, provider wording, and credits. There is no separate frontend demo flag. If that request fails, the UI displays uncertainty and a retry action rather than assuming live mode. Reload the page after restarting the backend in a different mode.
 
-## Quality Gates
+Demo SVG posters live in `public/demo/posters`. The demo uses no remote images, fonts, or API services after dependencies are installed. See the [root README](../README.md) for the walkthrough and live TMDB setup.
 
-```powershell
-npm test
+## Quality gates
+
+```sh
 npm run lint
+npm test
 npm run build
 ```
 
-## Implementation Notes
-- `src/api` owns API URL construction and response/problem handling.
-- `src/types` mirrors the backend contract shape used by the client.
-- `src/components` contains reusable movie cards, poster fallback rendering, pagination, recommendations, credits, and the details panel.
-- `src/features` owns abortable catalog, paged browsing, and movie-details state.
-- `App.tsx` composes feature state and coordinates shared release-year, recommendation, and watch-region inputs.
+## Implementation notes
+
+- `src/api` owns API URLs and response/problem handling.
+- `src/types` mirrors backend request and response contracts.
+- `src/features` owns abortable catalog, browsing, recommendation, and details state.
+- `src/components` contains movie cards, pagination, the compass picker, and the details drawer.
+- `App.tsx` coordinates shared region and year inputs and composes the page.
+
+The optional recommendation hint searches movie titles. Mood is a required genre rule, including when a hint is supplied.
 
 ## Credits
 
-Movie data and artwork are supplied by [The Movie Database (TMDB)](https://www.themoviedb.org).
-This product uses the TMDB API but is not endorsed or certified by TMDB.
+Demo content and artwork are fictional examples. Live mode uses TMDB data and artwork and displays its attribution.

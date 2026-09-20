@@ -21,5 +21,9 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Include="Movies/Demo/catalog.json" />
+  </ItemGroup>
+
 </Project>
 

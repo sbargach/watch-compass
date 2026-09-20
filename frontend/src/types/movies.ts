@@ -1,3 +1,5 @@
+export type AppInfo = { catalogMode: "demo" | "tmdb" };
+
 export interface MovieCard {
   movieId: number;
   title: string;

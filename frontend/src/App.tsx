@@ -5,6 +5,8 @@ import { Pagination } from "./components/Pagination";
 import { RecommendationGrid } from "./components/RecommendationGrid";
 import { CreditsFooter } from "./components/CreditsFooter";
 import { CompassPickPanel } from "./components/CompassPickPanel";
+import { useAppInfo } from "./features/catalog/useAppInfo";
+import { CatalogModeNotice } from "./features/catalog/CatalogModeNotice";
 import { useCatalogOverview } from "./features/catalog/useCatalogOverview";
 import { CatalogFeedSection } from "./features/catalog/CatalogFeedSection";
 import { useMovieDetails } from "./features/details/useMovieDetails";
@@ -40,6 +42,9 @@ type ReleaseYearFieldState = {
 };
 
 function App() {
+  const appInfo = useAppInfo();
+  const catalogMode = appInfo.info?.catalogMode;
+  const isDemo = catalogMode === "demo";
   const [queryInput, setQueryInput] = useState("");
   const [releaseYearInput, setReleaseYearInput] = useState("");
   const [activeQuery, setActiveQuery] = useState("");
@@ -214,12 +219,13 @@ function App() {
   return (
     <div className="app-shell">
       <main className="app-content">
+        <CatalogModeNotice mode={catalogMode} error={appInfo.error} isLoading={appInfo.isLoading} onRetry={appInfo.retry} />
         <header className="hero">
           <div className="hero-copy">
             <p className="hero-kicker">Watch Compass</p>
             <h1>Find something worth watching.</h1>
             <p className="hero-description">
-              Search the catalog, browse current releases, and spin the compass when you need a pick for tonight.
+              Search the catalog, browse movie feeds, and spin the compass when you need a pick for tonight.
             </p>
           </div>
 
@@ -284,7 +290,7 @@ function App() {
               <h2>Build a shortlist</h2>
             </div>
             <p className="recommendation-panel-copy">
-              Choose a mood, set your available time, and exclude anything you do not want to watch.
+              Each mood maps to a genre. Set your available time and exclude anything you do not want to watch.
             </p>
           </div>
 
@@ -335,10 +341,10 @@ function App() {
             </div>
 
             <label className="field field-wide">
-              <span>Optional hint</span>
+              <span>Optional title hint</span>
               <input
                 type="text"
-                placeholder="Actor, franchise, or title..."
+                placeholder="Movie title or part of a title..."
                 value={recommendationForm.query}
                 onChange={(event) =>
                   setRecommendationForm((current) => ({
@@ -440,6 +446,7 @@ function App() {
             error={detailsState.error}
             similarError={detailsState.similarError}
             watchRegionLabel={watchRegionLabel}
+            catalogMode={catalogMode}
             onClose={clearSelectedMovie}
             onRetry={detailsState.retry}
             onSelectMovie={handleSelectMovie}
@@ -545,8 +552,8 @@ function App() {
 
         {!hasSearch && (
           <CatalogFeedSection
-            title="Now Playing"
-            description="Movies currently playing in theaters."
+            title={isDemo ? "Sample Now Playing" : catalogMode === "tmdb" ? "Now Playing" : "Now Playing feed"}
+            description={catalogMode === "tmdb" ? "Movies currently playing in theaters." : isDemo ? "A fixed selection from the sample catalog." : "Catalog source has not been verified."}
             loadingLabel="Loading now playing movies..."
             emptyLabel="No now playing movies were returned."
             retryLabel="Retry now playing"
@@ -559,8 +566,8 @@ function App() {
 
         {!hasSearch && (
           <CatalogFeedSection
-            title="Trending Today"
-            description="Movies people are watching today."
+            title={isDemo ? "Sample Trending" : catalogMode === "tmdb" ? "Trending Today" : "Trending feed"}
+            description={catalogMode === "tmdb" ? "Movies people are watching today." : isDemo ? "A fixed selection from the sample catalog." : "Catalog source has not been verified."}
             loadingLabel="Loading trending movies..."
             emptyLabel="No trending movies were returned."
             retryLabel="Retry trending"
@@ -610,7 +617,7 @@ function App() {
             )}
           </section>
         )}
-        <CreditsFooter />
+        <CreditsFooter catalogMode={catalogMode} />
       </main>
     </div>
   );

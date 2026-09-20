@@ -36,23 +36,20 @@ public sealed class GetRecommendationsUseCase
 
         var normalizedCountryCode = countryCode.Trim().ToUpperInvariant();
 
-        var effectiveQuery = string.IsNullOrWhiteSpace(query)
-            ? mood switch
-            {
-                Mood.Chill => "drama",
-                Mood.FeelGood => "comedy",
-                Mood.Intense => "thriller",
-                Mood.Scary => "horror",
-                _ => "movie"
-            }
-            : query.Trim();
-
-        var searchResults = await _movieCatalog.SearchPageAsync(
-            effectiveQuery,
-            page: 1,
-            pageSize: RecommendationSearchPageSize,
-            releaseYear: releaseYear,
-            cancellationToken: cancellationToken);
+        var moodGenre = mood switch
+        {
+            Mood.Chill => "Drama",
+            Mood.FeelGood => "Comedy",
+            Mood.Intense => "Thriller",
+            Mood.Scary => "Horror",
+            _ => throw new ArgumentOutOfRangeException(nameof(mood))
+        };
+        var titleHint = string.IsNullOrWhiteSpace(query) ? null : query.Trim();
+        var searchResults = titleHint is null
+            ? await _movieCatalog.DiscoverByGenreAsync(moodGenre, 1, RecommendationSearchPageSize,
+                releaseYear, cancellationToken)
+            : await _movieCatalog.SearchPageAsync(titleHint, 1, RecommendationSearchPageSize,
+                releaseYear, cancellationToken);
         if (searchResults.Items.Count == 0)
         {
             return Array.Empty<Recommendation>();
@@ -70,11 +67,11 @@ public sealed class GetRecommendationsUseCase
         }
 
         var recommendations = new List<Recommendation>(3);
-        foreach (var batch in searchResults.Items.Chunk(CandidateBatchSize))
+        foreach (var batch in searchResults.Items.Take(RecommendationSearchPageSize).Chunk(CandidateBatchSize))
         {
             cancellationToken.ThrowIfCancellationRequested();
             var evaluatedCandidates = await Task.WhenAll(batch.Select(movie =>
-                EvaluateCandidateAsync(movie, mood, timeBudget, avoidSet, effectiveQuery, cancellationToken)));
+                EvaluateCandidateAsync(movie, mood, timeBudget, avoidSet, moodGenre, cancellationToken)));
             foreach (var candidate in evaluatedCandidates)
             {
                 if (candidate is not null)
@@ -125,7 +122,7 @@ public sealed class GetRecommendationsUseCase
         Mood mood,
         TimeBudget timeBudget,
         IReadOnlySet<string> avoidGenres,
-        string effectiveQuery,
+        string moodGenre,
         CancellationToken cancellationToken)
     {
         var runtime = movie.RuntimeMinutes;
@@ -136,7 +133,7 @@ public sealed class GetRecommendationsUseCase
         var releaseYear = movie.ReleaseYear;
         var overview = movie.Overview;
 
-        if (!runtime.HasValue || runtime.Value <= 0 || (avoidGenres.Count > 0 && genres.Count == 0))
+        if (!runtime.HasValue || runtime.Value <= 0 || !genres.Any(genre => !string.IsNullOrWhiteSpace(genre)))
         {
             try
             {
@@ -171,7 +168,8 @@ public sealed class GetRecommendationsUseCase
             .Select(genre => genre.Trim())
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToArray();
-        if (normalizedGenres.Any(avoidGenres.Contains))
+        if (!normalizedGenres.Contains(moodGenre, StringComparer.OrdinalIgnoreCase)
+            || normalizedGenres.Any(avoidGenres.Contains))
         {
             return null;
         }
@@ -181,7 +179,7 @@ public sealed class GetRecommendationsUseCase
             title,
             runtime.Value,
             normalizedGenres,
-            BuildReasons(mood, timeBudget.Minutes, runtime.Value, normalizedGenres, effectiveQuery),
+            BuildReasons(mood, timeBudget.Minutes, runtime.Value, moodGenre),
             Array.Empty<string>(),
             posterUrl,
             backdropUrl,
@@ -189,22 +187,13 @@ public sealed class GetRecommendationsUseCase
             overview);
     }
 
-    private static IReadOnlyList<string> BuildReasons(Mood mood, int budgetMinutes, int runtimeMinutes, IReadOnlyList<string> genres, string effectiveQuery)
+    private static IReadOnlyList<string> BuildReasons(Mood mood, int budgetMinutes, int runtimeMinutes, string moodGenre)
     {
-        var reasons = new List<string>(2);
-        reasons.Add($"Fits your {budgetMinutes}-minute budget with a {runtimeMinutes}-minute runtime.");
-
-        var genrePhrase = genres.Count > 0
-            ? string.Join("/", genres.Take(2))
-            : effectiveQuery;
-        var moodReason = $"Matches the {mood} mood through {genrePhrase}.";
-        reasons.Add(moodReason);
-
-        if (genres.Count == 0 && !string.IsNullOrWhiteSpace(effectiveQuery))
-        {
-            reasons.Add($"Aligned to your search for \"{effectiveQuery}\".");
-        }
-
-        return reasons;
+        var moodLabel = mood == Mood.FeelGood ? "Feel Good" : mood.ToString();
+        return
+        [
+            $"Fits your {budgetMinutes}-minute budget: {runtimeMinutes} minutes.",
+            $"Listed as {moodGenre}; our simple mood rule maps {moodLabel} to {moodGenre}."
+        ];
     }
 }
