@@ -4,11 +4,15 @@
 ![Version](https://img.shields.io/badge/version-0.24.1-f2b84b)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-Watch Compass helps you find a film by title, genre, mood, and available time. The React client uses an ASP.NET Core API for browsing, regional provider information, similar titles, and a small, explainable recommendation shortlist.
+Watch Compass is a film discovery app built with React and ASP.NET Core. Search by title, browse by genre, or get up to three recommendations that fit a mood and time limit. Film details include similar titles and region-specific streaming availability.
 
-## Try the demo — no API key
+![Watch Compass demo catalog showing search, recommendations, genre browsing, and sample films](docs/images/demo.png)
 
-Prerequisites: .NET SDK **10.0.100** (or a compatible patch) and Node.js **24+**.
+*The screenshot shows the local demo catalog. Its films, artwork, and availability are fictional.*
+
+## Run the demo
+
+You need .NET SDK **10.0.100** (or a compatible patch) and Node.js **24+**. No TMDB key is required.
 
 From the repository root:
 
@@ -24,13 +28,13 @@ npm ci
 npm run dev
 ```
 
-Open [localhost:5173](http://localhost:5173). The API runs at [localhost:5276](http://localhost:5276); its development [Swagger UI](http://localhost:5276/swagger) lists the endpoints.
+Open [localhost:5173](http://localhost:5173). The API runs at [localhost:5276](http://localhost:5276), with endpoint documentation in [Swagger UI](http://localhost:5276/swagger).
 
 The first run needs internet access to restore dependencies. Once installed, the demo uses only local services and bundled artwork. It does not require a TMDB account.
 
 ### A short walkthrough
 
-1. Confirm the **Demo mode** notice. Open **The Last Stroopwafel** from a sample feed and inspect its details and similar titles.
+1. Confirm the **Demo catalog** notice. Open **The Last Stroopwafel** from a sample feed and inspect its details and similar titles.
 2. Close details, change **Watch region** from Netherlands to United States, and reopen the film. Availability changes from **Canal Cinema (sample)** to **Evening Screen (sample)**.
 3. Search for **the** to try title matching and pagination. Add release year **2024** to narrow it to four results.
 4. Clear the title search and year, then browse **Comedy**. Its 13 films span two pages at the default page size.
@@ -132,15 +136,17 @@ CI builds and tests both applications and runs dependency advisory checks. Tests
 
 ## API surface
 
-- `GET /api/app-info` — `{ "catalogMode": "demo" | "tmdb" }`, reported by the backend.
-- `GET /api/genres` — genre names.
-- `GET /api/movies/search?query=...&page=1&pageSize=12&releaseYear=2024` — title search.
-- `GET /api/movies/discover?genre=Comedy&page=1&pageSize=12&releaseYear=2024` — genre discovery.
-- `GET /api/movies/trending?limit=12` and `GET /api/movies/now-playing?limit=12` — feeds, maximum limit 20.
-- `GET /api/movies/{movieId}?countryCode=NL` — details and regional availability.
-- `GET /api/movies/{movieId}/similar` — similar titles.
-- `POST /api/recommendations` — mood, runtime, region, optional title/year, and genre exclusions.
-- `GET /health` and `GET /metrics` — liveness and Prometheus metrics.
+| Endpoint | Purpose |
+| --- | --- |
+| `GET /api/app-info` | Reports the active catalog mode. |
+| `GET /api/genres` | Lists genres. |
+| `GET /api/movies/search` | Searches titles, with optional year and pagination. |
+| `GET /api/movies/discover` | Browses a genre, with optional year and pagination. |
+| `GET /api/movies/trending` and `GET /api/movies/now-playing` | Returns catalog feeds. |
+| `GET /api/movies/{movieId}` | Returns details and availability for a country code. |
+| `GET /api/movies/{movieId}/similar` | Returns similar films. |
+| `POST /api/recommendations` | Finds films by mood, runtime, region, and optional filters. |
+| `GET /health` and `GET /metrics` | Exposes liveness and Prometheus metrics. |
 
 Invalid constraints return RFC 7807 `400` responses. Invalid upstream payloads return sanitized `502` responses; exhausted upstream retries and timeouts return sanitized `503` responses. Problem responses include a trace identifier for log correlation.
 
