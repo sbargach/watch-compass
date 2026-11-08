@@ -272,7 +272,7 @@ describe("App", () => {
     await userEvent.click(screen.getByRole("button", { name: "Avoid genre Horror" }));
     await userEvent.click(screen.getByRole("button", { name: "Get recommendations" }));
 
-    await screen.findByRole("heading", { name: "Recommendation Results" });
+    await screen.findByRole("heading", { name: "Your picks" });
     expect(screen.getByText("Palm Springs")).toBeInTheDocument();
     expect(screen.getByText("Matches the feel-good mood.")).toBeInTheDocument();
     expect(screen.getByText("Prime Video")).toBeInTheDocument();
@@ -312,14 +312,14 @@ describe("App", () => {
     await userEvent.type(screen.getByLabelText("Release year"), "2020");
     await userEvent.click(screen.getByRole("button", { name: "Get recommendations" }));
 
-    await screen.findByRole("heading", { name: "Recommendation Results" });
+    await screen.findByRole("heading", { name: "Your picks" });
     expect(screen.getByText("Palm Springs")).toBeInTheDocument();
 
     const releaseYearInput = screen.getByLabelText("Release year");
     await userEvent.clear(releaseYearInput);
     await userEvent.type(releaseYearInput, "2021");
 
-    expect(screen.queryByRole("heading", { name: "Recommendation Results" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Your picks" })).not.toBeInTheDocument();
     expect(screen.queryByText("Palm Springs")).not.toBeInTheDocument();
 
     await waitFor(() => {
@@ -360,12 +360,12 @@ describe("App", () => {
 
     await userEvent.click(screen.getByRole("button", { name: "Get recommendations" }));
 
-    await screen.findByRole("heading", { name: "Recommendation Results" });
+    await screen.findByRole("heading", { name: "Your picks" });
     expect(screen.getByText("Palm Springs")).toBeInTheDocument();
 
     await userEvent.selectOptions(screen.getByLabelText("Watch region"), "US");
 
-    expect(screen.queryByRole("heading", { name: "Recommendation Results" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Your picks" })).not.toBeInTheDocument();
     expect(screen.queryByText("Palm Springs")).not.toBeInTheDocument();
 
     await waitFor(() => {
@@ -422,9 +422,9 @@ describe("App", () => {
     await userEvent.type(screen.getByLabelText("Release year"), "2007");
     await userEvent.click(await screen.findByRole("button", { name: "Browse genre Comedy" }));
 
-    await screen.findByRole("heading", { name: "Comedy Picks" });
+    await screen.findByRole("heading", { name: "Comedy" });
     expect(screen.getByText("Hot Fuzz")).toBeInTheDocument();
-    expect(screen.getByText("13 results from 2007. Select a card for details and similar titles.")).toBeInTheDocument();
+    expect(screen.getByText("13 results from 2007.")).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole("button", { name: "Next" }));
 
@@ -476,10 +476,10 @@ describe("App", () => {
     await userEvent.type(screen.getByLabelText("Release year"), "2016");
     await userEvent.click(screen.getByRole("button", { name: "Search" }));
 
-    const searchResultsHeading = await screen.findByRole("heading", { name: "Search Results" });
+    const searchResultsHeading = await screen.findByRole("heading", { name: "Search results" });
     expect(screen.getByRole("heading", { name: "Arrival" })).toBeInTheDocument();
     const searchSummary = searchResultsHeading.parentElement?.querySelector("p");
-    expect(searchSummary?.textContent).toContain("(1 result in 2016). Select a card for deeper context.");
+    expect(searchSummary?.textContent).toContain("(1 result in 2016).");
   });
 
   it("uses the input as the single source of truth when the release year is invalid", async () => {
@@ -523,20 +523,19 @@ describe("App", () => {
     await userEvent.type(screen.getByLabelText("Release year"), "2016");
     await userEvent.click(screen.getByRole("button", { name: "Search" }));
 
-    await screen.findByRole("heading", { name: "Search Results" });
+    await screen.findByRole("heading", { name: "Search results" });
 
     const releaseYearInput = screen.getByLabelText("Release year");
     await userEvent.click(releaseYearInput);
     await userEvent.type(releaseYearInput, "{backspace}{backspace}");
 
-    const searchResultsHeading = screen.getByRole("heading", { name: "Search Results" });
+    const searchResultsHeading = screen.getByRole("heading", { name: "Search results" });
     const searchSummary = searchResultsHeading.parentElement?.querySelector("p");
 
     expect(screen.getByText("Use a four-digit release year.")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Search" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Get recommendations" })).toBeDisabled();
     expect(searchSummary?.textContent).toContain("Fix the release year to refresh results.");
-    expect(screen.getByText(/Fix input from the main toolbar/)).toBeInTheDocument();
 
     await waitFor(() => {
       expect(fetchMock).toHaveBeenCalledTimes(5);

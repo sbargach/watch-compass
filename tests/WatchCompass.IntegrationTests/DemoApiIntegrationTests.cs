@@ -103,7 +103,7 @@ public class DemoApiIntegrationTests
         {
             movie.GetProperty("runtimeMinutes").GetInt32().ShouldBeLessThanOrEqualTo(120);
             movie.GetProperty("genres").EnumerateArray().Select(item => item.GetString()).ShouldContain(genre);
-            movie.GetProperty("reasons")[1].GetString()!.ShouldContain("simple mood rule");
+            movie.GetProperty("reasons")[1].GetString()!.ShouldContain("genre match");
         }
     }
 

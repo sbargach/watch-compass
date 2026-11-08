@@ -3,7 +3,6 @@ import type { MovieCard } from "../../types/movies";
 
 type Props = {
   title: string;
-  description: string;
   loadingLabel: string;
   emptyLabel: string;
   retryLabel: string;
@@ -15,7 +14,6 @@ type Props = {
 
 export function CatalogFeedSection({
   title,
-  description,
   loadingLabel,
   emptyLabel,
   retryLabel,
@@ -28,7 +26,6 @@ export function CatalogFeedSection({
     <section className="content-section">
       <div className="section-heading">
         <h2>{title}</h2>
-        <p>{description}</p>
       </div>
       {state.isLoading && <p className="status-text">{loadingLabel}</p>}
       {state.error && (

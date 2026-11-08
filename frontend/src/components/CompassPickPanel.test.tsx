@@ -51,9 +51,9 @@ describe("CompassPickPanel", () => {
       />
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Spin for a pick" }));
+    fireEvent.click(screen.getByRole("button", { name: "Pick a film" }));
 
-    expect(screen.getByRole("button", { name: "Spinning..." })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Picking..." })).toBeDisabled();
     expect(screen.getByText("Finding a pick...")).toBeInTheDocument();
     expect(onSelectMovie).not.toHaveBeenCalled();
 
@@ -62,7 +62,7 @@ describe("CompassPickPanel", () => {
     });
 
     expect(onSelectMovie).toHaveBeenCalledWith(palmSprings);
-    expect(screen.getByText("Compass picked Palm Springs.")).toBeInTheDocument();
+    expect(screen.getByText("Palm Springs")).toBeInTheDocument();
   });
 
   it("keeps random picking disabled until movies are available", () => {
@@ -75,7 +75,7 @@ describe("CompassPickPanel", () => {
       />
     );
 
-    expect(screen.getByRole("button", { name: "Spin for a pick" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Pick a film" })).toBeDisabled();
     expect(screen.getByText("Connect the API or retry a feed to unlock random picks.")).toBeInTheDocument();
   });
 });

@@ -38,7 +38,6 @@ const WATCH_REGIONS = [
 type ReleaseYearFieldState = {
   releaseYear: number | null;
   validationMessage: string | null;
-  statusLabel: string;
 };
 
 function App() {
@@ -223,9 +222,9 @@ function App() {
         <header className="hero">
           <div className="hero-copy">
             <p className="hero-kicker">Watch Compass</p>
-            <h1>Find something worth watching.</h1>
+            <h1>Find a film for tonight.</h1>
             <p className="hero-description">
-              Search the catalog, browse movie feeds, and spin the compass when you need a pick for tonight.
+              Search by title, browse a genre, or get a random pick.
             </p>
           </div>
 
@@ -286,11 +285,10 @@ function App() {
         <section className="recommendation-panel">
           <div className="recommendation-panel-header">
             <div>
-              <p className="panel-kicker">Recommendations</p>
-              <h2>Build a shortlist</h2>
+              <h2>Recommendations</h2>
             </div>
             <p className="recommendation-panel-copy">
-              Each mood maps to a genre. Set your available time and exclude anything you do not want to watch.
+              Choose a mood and time limit.
             </p>
           </div>
 
@@ -330,17 +328,7 @@ function App() {
               />
             </label>
 
-            <div className="field">
-              <span>Watch region</span>
-              <p className="field-note">{watchRegionLabel} from the main toolbar.</p>
-            </div>
-
-            <div className="field">
-              <span>Release year</span>
-              <p className="field-note">{releaseYearFieldState.statusLabel} from the main toolbar.</p>
-            </div>
-
-            <label className="field field-wide">
+            <label className="field">
               <span>Optional title hint</span>
               <input
                 type="text"
@@ -420,7 +408,7 @@ function App() {
           {hasRecommendations && (
             <div className="recommendation-results">
               <div className="section-heading recommendation-results-heading">
-                <h2>Recommendation Results</h2>
+                <h2>Your picks</h2>
                 <p>
                   {formatCount(recommendationState.items.length, "pick")} for{" "}
                   <strong>{formatMoodLabel(recommendationForm.mood)}</strong>.
@@ -457,12 +445,8 @@ function App() {
           <section className="genre-explorer">
             <div className="genre-explorer-header">
               <div>
-                <p className="panel-kicker">Browse Mode</p>
-                <h2>Genre Explorer</h2>
+                <h2>Browse by genre</h2>
               </div>
-              <p className="genre-explorer-copy">
-                Pick a genre to browse popular movies. The release-year filter applies here too.
-              </p>
             </div>
 
             {genresState.isLoading && <p className="status-text">Loading genres...</p>}
@@ -505,9 +489,6 @@ function App() {
               </div>
             )}
 
-            {!discoverGenre && !genresState.isLoading && !genresState.error && genresState.items.length > 0 && (
-              <p className="status-text">Select a genre to load a dedicated discovery page.</p>
-            )}
             {discoverGenre && !isReleaseYearValid && (
               <p className="status-text">Fix the release year to refresh this genre view.</p>
             )}
@@ -522,11 +503,10 @@ function App() {
             {hasDiscoverResults && isReleaseYearValid && (
               <div className="genre-results">
                 <div className="section-heading genre-results-heading">
-                  <h2>{discoverGenre} Picks</h2>
+                  <h2>{discoverGenre}</h2>
                   <p>
                     {formatCount(discoverState.result?.totalResults ?? 0, "result")}
-                    {releaseYear !== null ? ` from ${releaseYear}` : ""}. Select a card for details and
-                    similar titles.
+                    {releaseYear !== null ? ` from ${releaseYear}` : ""}.
                   </p>
                 </div>
 
@@ -553,7 +533,6 @@ function App() {
         {!hasSearch && (
           <CatalogFeedSection
             title={isDemo ? "Sample Now Playing" : catalogMode === "tmdb" ? "Now Playing" : "Now Playing feed"}
-            description={catalogMode === "tmdb" ? "Movies currently playing in theaters." : isDemo ? "A fixed selection from the sample catalog." : "Catalog source has not been verified."}
             loadingLabel="Loading now playing movies..."
             emptyLabel="No now playing movies were returned."
             retryLabel="Retry now playing"
@@ -567,7 +546,6 @@ function App() {
         {!hasSearch && (
           <CatalogFeedSection
             title={isDemo ? "Sample Trending" : catalogMode === "tmdb" ? "Trending Today" : "Trending feed"}
-            description={catalogMode === "tmdb" ? "Movies people are watching today." : isDemo ? "A fixed selection from the sample catalog." : "Catalog source has not been verified."}
             loadingLabel="Loading trending movies..."
             emptyLabel="No trending movies were returned."
             retryLabel="Retry trending"
@@ -581,13 +559,13 @@ function App() {
         {hasSearch && (
           <section className="content-section">
             <div className="section-heading">
-              <h2>Search Results</h2>
+              <h2>Search results</h2>
               <p>
                 Query: <strong>{activeQuery}</strong>
                 {!isReleaseYearValid && " Fix the release year to refresh results."}
                 {isReleaseYearValid &&
                   searchState.result &&
-                  ` (${formatCount(searchState.result.totalResults, "result")}${releaseYear !== null ? ` in ${releaseYear}` : ""}). Select a card for deeper context.`}
+                  ` (${formatCount(searchState.result.totalResults, "result")}${releaseYear !== null ? ` in ${releaseYear}` : ""}).`}
               </p>
             </div>
 
@@ -671,16 +649,14 @@ function getReleaseYearFieldState(input: string): ReleaseYearFieldState {
   if (trimmedInput.length === 0) {
     return {
       releaseYear: null,
-      validationMessage: null,
-      statusLabel: "Any year"
+      validationMessage: null
     };
   }
 
   if (!/^\d{4}$/.test(trimmedInput)) {
     return {
       releaseYear: null,
-      validationMessage: "Use a four-digit release year.",
-      statusLabel: "Fix input"
+      validationMessage: "Use a four-digit release year."
     };
   }
 
@@ -688,15 +664,13 @@ function getReleaseYearFieldState(input: string): ReleaseYearFieldState {
   if (releaseYear < MIN_RELEASE_YEAR || releaseYear > MAX_RELEASE_YEAR) {
     return {
       releaseYear: null,
-      validationMessage: `Release year must be between ${MIN_RELEASE_YEAR} and ${MAX_RELEASE_YEAR}.`,
-      statusLabel: "Fix input"
+      validationMessage: `Release year must be between ${MIN_RELEASE_YEAR} and ${MAX_RELEASE_YEAR}.`
     };
   }
 
   return {
     releaseYear,
-    validationMessage: null,
-    statusLabel: String(releaseYear)
+    validationMessage: null
   };
 }
 

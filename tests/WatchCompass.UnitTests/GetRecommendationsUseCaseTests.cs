@@ -102,7 +102,7 @@ public class GetRecommendationsUseCaseTests
     }
 
     [Test]
-    public async Task ReasonsContainAtLeastTwoEntriesIncludingBudget()
+    public async Task ReasonsIncludeRuntimeAndLimit()
     {
         var catalog = new FakeMovieCatalog
         {
@@ -117,7 +117,7 @@ public class GetRecommendationsUseCaseTests
 
         recommendations.Count.ShouldBe(1);
         recommendations[0].Reasons.Count.ShouldBeGreaterThanOrEqualTo(2);
-        recommendations[0].Reasons.Any(r => r.Contains("budget", StringComparison.OrdinalIgnoreCase)).ShouldBeTrue();
+        recommendations[0].Reasons.Any(r => r.Contains("90 minutes") && r.Contains("100-minute limit")).ShouldBeTrue();
     }
 
     [Test]
@@ -281,7 +281,7 @@ public class GetRecommendationsUseCaseTests
         catalog.Queries.ShouldBeEmpty();
         catalog.ReleaseYears.ShouldBe(new int?[] { 2024 });
         catalog.SearchPageSizes.ShouldBe(new[] { 20 });
-        results[0].Reasons[1].ShouldContain("simple mood rule");
+        results[0].Reasons[1].ShouldContain("genre match");
         results[0].Reasons[1].ShouldContain(genre);
     }
 

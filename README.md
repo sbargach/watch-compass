@@ -1,7 +1,7 @@
 # Watch Compass
 
-[![CI](https://github.com/princ/watch-compass/actions/workflows/ci.yml/badge.svg)](https://github.com/princ/watch-compass/actions/workflows/ci.yml)
-![Version](https://img.shields.io/badge/version-0.24.0-f2b84b)
+[![CI](https://github.com/sbargach/watch-compass/actions/workflows/ci.yml/badge.svg)](https://github.com/sbargach/watch-compass/actions/workflows/ci.yml)
+![Version](https://img.shields.io/badge/version-0.24.1-f2b84b)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 Watch Compass helps you find a film by title, genre, mood, and available time. The React client uses an ASP.NET Core API for browsing, regional provider information, similar titles, and a small, explainable recommendation shortlist.
@@ -36,7 +36,7 @@ The first run needs internet access to restore dependencies. Once installed, the
 4. Clear the title search and year, then browse **Comedy**. Its 13 films span two pages at the default page size.
 5. With **Feel Good**, **120 minutes**, and no title hint or exclusions, select **Get recommendations**. Inspect the runtime and genre explanations. Try the other moods too.
 6. Select **Scary** and avoid **Horror**: the shortlist is empty because those constraints conflict. Clear that exclusion before continuing.
-7. Select **Spin for a pick** to open a random film from the currently loaded results.
+7. Select **Pick a film** to open a random film from the currently loaded results.
 
 ### What the demo represents
 

@@ -146,7 +146,6 @@ export function MovieDetailsPanel({
             <div className="details-section">
               <div className="section-heading">
                 <h3>Similar titles</h3>
-                <p>Use the panel to keep exploring without losing your current results.</p>
               </div>
 
               {isSimilarLoading && <p className="status-text">Loading similar movies...</p>}

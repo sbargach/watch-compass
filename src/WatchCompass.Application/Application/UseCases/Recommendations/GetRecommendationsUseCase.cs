@@ -192,8 +192,8 @@ public sealed class GetRecommendationsUseCase
         var moodLabel = mood == Mood.FeelGood ? "Feel Good" : mood.ToString();
         return
         [
-            $"Fits your {budgetMinutes}-minute budget: {runtimeMinutes} minutes.",
-            $"Listed as {moodGenre}; our simple mood rule maps {moodLabel} to {moodGenre}."
+            $"{runtimeMinutes} minutes, within your {budgetMinutes}-minute limit.",
+            $"{moodLabel} uses {moodGenre} as a genre match."
         ];
     }
 }

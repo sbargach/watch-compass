@@ -73,18 +73,17 @@ export function CompassPickPanel({
       </div>
 
       <div className="compass-copy">
-        <p className="panel-kicker">Tonight's compass</p>
-        <h2 id="compass-pick-heading">Let the compass choose</h2>
+        <h2 id="compass-pick-heading">Random pick</h2>
         <p className="compass-status">{getCompassStatus(movies.length, isCatalogLoading, hasCatalogError)}</p>
       </div>
 
       <div className="compass-actions">
         <button type="button" className="compass-random-button" disabled={!canSpin} onClick={handleSpin}>
-          {isSpinning ? "Spinning..." : "Spin for a pick"}
+          {isSpinning ? "Picking..." : "Pick a film"}
         </button>
       </div>
 
-      <div className="compass-result" aria-live="polite">
+      {(isSpinning || pickedMovie || movies.length === 0) && <div className="compass-result" aria-live="polite">
         {isSpinning && <p className="compass-result-empty">Finding a pick...</p>}
         {!isSpinning && pickedMovie && (
           <button
@@ -96,22 +95,22 @@ export function CompassPickPanel({
           >
             <PosterArtwork title={pickedMovie.title} posterUrl={pickedMovie.posterUrl} className="compass-result-poster" />
             <span>
-              <span className="compass-result-label">Compass picked {pickedMovie.title}.</span>
+              <span className="compass-result-label">{pickedMovie.title}</span>
               <span className="compass-result-meta">{formatMovieMeta(pickedMovie)}</span>
             </span>
           </button>
         )}
-        {!isSpinning && !pickedMovie && (
-          <p className="compass-result-empty">Load a feed, search, or recommendation list, then spin for a pick.</p>
+        {!isSpinning && !pickedMovie && movies.length === 0 && (
+          <p className="compass-result-empty">Load a feed, search, or recommendation list first.</p>
         )}
-      </div>
+      </div>}
     </aside>
   );
 }
 
 function getCompassStatus(movieCount: number, isCatalogLoading: boolean, hasCatalogError: boolean): string {
   if (movieCount > 0) {
-    return `${movieCount} current ${movieCount === 1 ? "title" : "titles"} ready for a random pick.`;
+    return `${movieCount} ${movieCount === 1 ? "film" : "films"} to choose from.`;
   }
 
   if (isCatalogLoading) {

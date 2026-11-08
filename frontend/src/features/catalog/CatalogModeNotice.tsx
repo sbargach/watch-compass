@@ -18,8 +18,8 @@ export function CatalogModeNotice({ mode, error, isLoading, onRetry }: Props) {
   if (mode !== "demo") return null;
   return (
     <aside className="catalog-notice" aria-label="Demo catalog">
-      <strong>Demo mode — fictional films, real app.</strong>
-      <p>Explore 24 sample films without an API key. Feeds are fixed examples; streaming availability is simulated.</p>
+      <strong>Demo catalog</strong>
+      <p>24 fictional films. Feeds and availability are sample data.</p>
     </aside>
   );
 }

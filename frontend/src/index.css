@@ -38,28 +38,7 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  background:
-    linear-gradient(180deg, rgba(255, 248, 236, 0.06), rgba(255, 248, 236, 0) 16rem),
-    repeating-linear-gradient(90deg, rgba(255, 248, 236, 0.04) 0 1px, transparent 1px 5.5rem),
-    linear-gradient(115deg, rgba(242, 184, 75, 0.14), transparent 28rem),
-    linear-gradient(145deg, #100d0b 0%, #261810 48%, #0b1110 100%);
-}
-
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  opacity: 0.45;
-  background:
-    linear-gradient(90deg, rgba(0, 0, 0, 0.32), transparent 18%, transparent 82%, rgba(0, 0, 0, 0.32)),
-    repeating-linear-gradient(
-      0deg,
-      transparent 0 22px,
-      rgba(255, 248, 236, 0.05) 22px 23px,
-      transparent 23px 46px
-    );
+  background: #100e0c;
 }
 
 button,
@@ -84,36 +63,23 @@ button {
 .app-content {
   width: min(1200px, calc(100% - 2rem));
   margin: 0 auto;
-  padding: 2rem 0 4rem;
+  padding: 1.5rem 0 4rem;
 }
 
 .hero {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(21rem, 0.72fr);
-  gap: 2rem;
+  grid-template-columns: minmax(0, 1fr) minmax(16rem, 0.48fr);
+  gap: 1.5rem;
   align-items: center;
-  min-height: 25rem;
+  min-height: 17rem;
   margin-bottom: 1rem;
-  padding: 2.2rem;
+  padding: 1.75rem;
   overflow: hidden;
   border: 1px solid rgba(255, 232, 190, 0.18);
   border-radius: 8px;
-  background:
-    linear-gradient(90deg, rgba(12, 9, 7, 0.96), rgba(21, 14, 10, 0.9) 58%, rgba(55, 31, 18, 0.76)),
-    repeating-linear-gradient(90deg, rgba(255, 248, 236, 0.08) 0 0.25rem, transparent 0.25rem 1.35rem);
-  box-shadow: var(--shadow);
+  background: #1c1915;
   animation: slide-up 420ms ease-out both;
-}
-
-.hero::after {
-  content: "";
-  position: absolute;
-  inset: auto 1.4rem 1.2rem;
-  height: 0.35rem;
-  border-radius: 999px;
-  background: linear-gradient(90deg, var(--accent), var(--gold), var(--rose));
-  opacity: 0.86;
 }
 
 .hero-copy {
@@ -135,17 +101,17 @@ button {
 .hero h1 {
   margin: 0;
   font-family: "Segoe UI", system-ui, sans-serif;
-  font-size: 3.35rem;
-  line-height: 1.04;
+  font-size: 2.6rem;
+  line-height: 1.1;
   color: var(--text-strong);
-  max-width: 12ch;
+  max-width: 18ch;
 }
 
 .hero-description {
   max-width: 62ch;
   color: var(--muted);
-  margin: 1rem 0 0;
-  font-size: 1.05rem;
+  margin: 0.75rem 0 0;
+  font-size: 1rem;
   line-height: 1.55;
 }
 
@@ -153,30 +119,25 @@ button {
   position: relative;
   z-index: 1;
   display: grid;
-  gap: 1rem;
+  gap: 0.6rem;
   align-self: stretch;
   align-content: center;
-  min-height: 21rem;
-  padding: 1.1rem;
-  border: 1px solid rgba(255, 248, 236, 0.18);
-  border-radius: 8px;
-  background:
-    linear-gradient(180deg, rgba(255, 248, 236, 0.1), rgba(255, 248, 236, 0.03)),
-    rgba(8, 7, 6, 0.72);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  min-height: 0;
+  padding: 0.25rem 0 0.25rem 1.5rem;
+  border-left: 1px solid rgba(255, 248, 236, 0.14);
 }
 
 .compass-stage {
   display: grid;
   place-items: center;
-  min-height: 10rem;
+  min-height: 5.5rem;
 }
 
 .compass-ring {
   position: relative;
   display: grid;
   place-items: center;
-  width: 10.5rem;
+  width: 6.5rem;
   aspect-ratio: 1;
   border: 1px solid rgba(255, 248, 236, 0.2);
   border-radius: 50%;
@@ -199,11 +160,11 @@ button {
 .compass-ring::before {
   width: 0.4rem;
   height: 0.4rem;
-  top: 0.65rem;
+  top: 0.4rem;
   box-shadow:
-    0 8.8rem 0 rgba(255, 248, 236, 0.34),
-    4.4rem 4.4rem 0 rgba(255, 248, 236, 0.34),
-    -4.4rem 4.4rem 0 rgba(255, 248, 236, 0.34);
+    0 5.25rem 0 rgba(255, 248, 236, 0.34),
+    2.65rem 2.65rem 0 rgba(255, 248, 236, 0.34),
+    -2.65rem 2.65rem 0 rgba(255, 248, 236, 0.34);
 }
 
 .compass-ring::after {
@@ -217,15 +178,15 @@ button {
   position: relative;
   z-index: 2;
   display: block;
-  width: 7.5rem;
-  height: 7.5rem;
+  width: 4.8rem;
+  height: 4.8rem;
   transition: transform 950ms cubic-bezier(0.2, 0.82, 0.24, 1);
   filter: drop-shadow(0 14px 20px rgba(0, 0, 0, 0.35));
 }
 
 .compass-scan-line {
   position: absolute;
-  inset: 0.55rem;
+  inset: 0.35rem;
   border: 1px solid rgba(242, 184, 75, 0.32);
   border-radius: 50%;
   opacity: 0.8;
@@ -238,7 +199,7 @@ button {
 .compass-copy h2 {
   margin: 0;
   font-family: "Segoe UI", system-ui, sans-serif;
-  font-size: 1.35rem;
+  font-size: 1.15rem;
   line-height: 1.18;
   color: var(--text-strong);
 }
@@ -288,7 +249,7 @@ button {
 }
 
 .compass-result {
-  min-height: 4.9rem;
+  min-height: 0;
 }
 
 .compass-result-card {
@@ -345,8 +306,7 @@ button {
   border: 1px solid rgba(255, 232, 190, 0.2);
   border-radius: 8px;
   background: rgba(24, 18, 14, 0.88);
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.24);
-  backdrop-filter: blur(14px);
+  box-shadow: none;
   animation: slide-up 500ms ease-out both;
 }
 
@@ -383,26 +343,15 @@ button {
   border: 1px solid rgba(255, 232, 190, 0.32);
   border-radius: 8px;
   color: var(--text-dark);
-  background:
-    linear-gradient(180deg, rgba(255, 248, 236, 0.96), rgba(249, 236, 212, 0.94)),
-    var(--surface-soft);
-  box-shadow: var(--shadow);
+  background: #f4efe6;
+  box-shadow: none;
   animation: slide-up 560ms ease-out both;
-}
-
-.recommendation-panel::before,
-.genre-explorer::before {
-  content: "";
-  position: absolute;
-  inset: 0 0 auto;
-  height: 0.42rem;
-  background: linear-gradient(90deg, var(--accent), var(--gold), var(--rose));
 }
 
 .recommendation-panel-header,
 .genre-explorer-header {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(18rem, 24rem);
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 1rem;
   align-items: end;
   margin-bottom: 1.1rem;
@@ -447,7 +396,6 @@ button {
   color: var(--field-label, var(--muted));
 }
 
-.field-note,
 .field input,
 .field select,
 .search-query-input {
@@ -459,21 +407,11 @@ button {
   background: var(--input-bg, #fffdf7);
 }
 
-.field-note {
-  margin: 0;
-  min-height: 3rem;
-  line-height: 1.35;
-}
-
 .field input:focus,
 .field select:focus,
 .search-query-input:focus {
   outline: 2px solid var(--focus);
   border-color: var(--accent);
-}
-
-.field-wide {
-  grid-column: span 2;
 }
 
 .field-full {
@@ -619,10 +557,8 @@ button {
   position: relative;
   border: 1px solid rgba(255, 232, 190, 0.18);
   border-radius: 8px;
-  background:
-    linear-gradient(180deg, rgba(255, 248, 236, 0.08), rgba(255, 248, 236, 0.03)),
-    rgba(21, 17, 14, 0.92);
-  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.26);
+  background: #1c1915;
+  box-shadow: none;
   transition:
     transform 180ms ease,
     border-color 180ms ease,
@@ -648,7 +584,7 @@ button {
 .recommendation-card:hover {
   transform: translateY(-2px);
   border-color: rgba(242, 184, 75, 0.48);
-  box-shadow: 0 24px 56px rgba(0, 0, 0, 0.32);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
 }
 
 .movie-tile-button,
@@ -775,9 +711,9 @@ button {
 
 .recommendation-group-highlight {
   padding: 0.8rem 0.9rem;
-  border: 1px solid rgba(242, 184, 75, 0.24);
+  border: 1px solid rgba(255, 248, 236, 0.16);
   border-radius: 8px;
-  background: rgba(242, 184, 75, 0.1);
+  background: rgba(255, 248, 236, 0.05);
 }
 
 .recommendation-label {
@@ -1082,23 +1018,10 @@ button {
 }
 
 @media (max-width: 900px) {
-  .hero {
-    grid-template-columns: 1fr;
-    min-height: 0;
-  }
-
   .hero h1 {
-    max-width: 14ch;
-    font-size: 2.7rem;
+    font-size: 2.4rem;
   }
 
-  .compass-pick-panel {
-    min-height: 0;
-  }
-
-  .search-toolbar {
-    grid-template-columns: 1fr;
-  }
 }
 
 @media (max-width: 720px) {
@@ -1108,8 +1031,15 @@ button {
   }
 
   .hero {
+    grid-template-columns: 1fr;
     gap: 1.25rem;
     padding: 1.2rem;
+  }
+
+  .compass-pick-panel {
+    border-left: 0;
+    border-top: 1px solid rgba(255, 248, 236, 0.14);
+    padding: 1rem 0 0;
   }
 
   .hero h1 {
@@ -1119,6 +1049,10 @@ button {
 
   .hero-description {
     font-size: 1rem;
+  }
+
+  .search-toolbar {
+    grid-template-columns: 1fr;
   }
 
   .search-form {
@@ -1241,12 +1175,12 @@ button {
   }
 
   .compass-ring {
-    width: 9rem;
+    width: 6rem;
   }
 
   .compass-mark {
-    width: 6.4rem;
-    height: 6.4rem;
+    width: 4.4rem;
+    height: 4.4rem;
   }
 
   .movie-tile,
@@ -1267,18 +1201,24 @@ button {
 }
 
 .catalog-notice {
-  margin-bottom: 1.5rem;
-  padding: 1rem 1.25rem;
-  border: 1px solid #b8914b;
-  border-radius: 0.75rem;
-  background: #29271f;
-  color: #f3dfb9;
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.75rem;
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid rgba(255, 232, 190, 0.16);
+  border-radius: 8px;
+  background: #1c1915;
+  color: var(--muted);
 }
 
 .catalog-notice p {
-  margin: 0.4rem 0 0;
-  line-height: 1.5;
+  margin: 0;
+  line-height: 1.4;
 }
+
+.catalog-notice strong { color: var(--text); }
 
 .catalog-notice button {
   margin-top: 0.75rem;
